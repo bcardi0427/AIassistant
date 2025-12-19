@@ -6,6 +6,7 @@ from ..agents.tools import AgentTools
 from ..config import ConfigurationManager
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
+from ..openrouter_api import calculate_cost # Import calculate_cost
 
 
 logger = logging.getLogger(__name__)
@@ -260,6 +261,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
             total_input_tokens = 0
             total_output_tokens = 0
             total_cached_tokens = 0
+            total_cost = 0.0 # Add total cost tracking
 
             while iteration < max_iterations:
                 iteration += 1
@@ -293,10 +295,11 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 current_tool_call = None
                 tool_calls_announced = False
                 tool_calls_pending_announced = False
-                # Track token usage
+                # Track token usage and cost for current iteration
                 input_tokens = 0
                 output_tokens = 0
                 cached_tokens = 0
+                iteration_cost = 0.0 # Cost for the current iteration
 
                 async for chunk in stream:
                     delta = chunk.choices[0].delta
@@ -317,10 +320,14 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
 
                         logger.debug(f"[USAGE] Parsed - Input: {input_tokens}, Output: {output_tokens}, Cached: {cached_tokens}")
 
+                        # Calculate cost for this iteration
+                        iteration_cost = calculate_cost(self.model, input_tokens, output_tokens)
+
                         # Accumulate totals
                         total_input_tokens += input_tokens
                         total_output_tokens += output_tokens
                         total_cached_tokens += cached_tokens
+                        total_cost += iteration_cost # Accumulate total cost
 
                     # Stream content tokens
                     if delta.content:
@@ -396,7 +403,8 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                 "input_tokens": input_tokens,
                                 "output_tokens": output_tokens,
                                 "cached_tokens": cached_tokens,
-                                "total_tokens": input_tokens + output_tokens
+                                "total_tokens": input_tokens + output_tokens,
+                                "cost": iteration_cost # Add cost for this message
                             }
                         })
                     }
@@ -498,7 +506,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                     })
                 }
 
-            logger.info(f"Agent completed after {iteration} iteration(s) - Total tokens: {total_input_tokens + total_output_tokens} (input: {total_input_tokens}, output: {total_output_tokens}, cached: {total_cached_tokens})")
+            logger.info(f"Agent completed after {iteration} iteration(s) - Total tokens: {total_input_tokens + total_output_tokens} (input: {total_input_tokens}, output: {total_output_tokens}, cached: {total_cached_tokens}), Total cost: {total_cost:.6f}")
 
             yield {
                 "event": "complete",
@@ -509,7 +517,8 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                         "input_tokens": total_input_tokens,
                         "output_tokens": total_output_tokens,
                         "cached_tokens": total_cached_tokens,
-                        "total_tokens": total_input_tokens + total_output_tokens
+                        "total_tokens": total_input_tokens + total_output_tokens,
+                        "total_cost": total_cost # Add total cost to the complete event
                     }
                 })
             }

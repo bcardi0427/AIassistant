@@ -2,6 +2,8 @@
 
 DOMAIN = "ai_config_agent"
 
+MODEL_COST_API_URL = "https://openrouter.ai/api/v1/models"
+
 # Configuration constants
 CONF_API_KEY = "api_key"
 CONF_API_URL = "api_url"

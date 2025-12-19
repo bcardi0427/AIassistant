@@ -10,31 +10,16 @@ An AI-powered Home Assistant configuration assistant with approval workflow.
 
 # Installation
 
-## Option 1: HACS Custom Component (Recommended for Core/Container)
-
-1. **Add to HACS:**
-   - Open HACS → Integrations
-   - Click ⋮ → Custom repositories
-   - Add: `https://github.com/yinzara/ha-config-ai-agent`
-   - Category: Integration
-
-2. **Install:**
+[![Open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=yinzara&repository=ha-config-ai-agent&category=Integration)
+1. **Install:** 
    - Search for "AI Configuration Agent"
    - Click Download
    - Restart Home Assistant
 
-3. **Configure:**
+2. **Configure:**
    - Settings → Devices & Services → Add Integration
    - Search "AI Configuration Agent"
    - Enter API key and settings
-
-## Option 2: Home Assistant Add-on (Supervisor Required)
-
-1. Navigate to Settings → Add-ons → Add-on Store
-2. Click ⋮ → Repositories
-3. Add: `https://github.com/yinzara/ha-config-ai-agent`
-4. Find "AI Configuration Agent" and click Install
-5. Configure and Start
 
 # Features
 * 🤖 **Natural Language Interface** - No YAML expertise required
