@@ -124,15 +124,18 @@ Configure the add-on through the Home Assistant UI: **Settings** → **Add-ons**
 #### Basic Configuration
 
 ```yaml
-openai_api_key: "sk-your-openai-api-key"
+provider: "gemini"  # Select your AI provider
+api_key: "your-api-key"
+model: "gemini-2.0-flash"
 ```
 
 #### Full Configuration
 
 ```yaml
-openai_api_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
-openai_api_key: "your-api-key"
-openai_model: "gemini-2.5-flash"
+provider: "gemini"
+api_url: ""  # Leave empty for auto-detection based on provider
+api_key: "your-api-key"
+model: "gemini-2.0-flash"
 log_level: "info"
 system_prompt_file: ""
 temperature: ""
@@ -144,40 +147,52 @@ usage_tracking: "stream_options"
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `openai_api_url` | URL | `https://generativelanguage.googleapis.com/v1beta/openai/` | API endpoint URL (Google Cloud default, can be changed to any OpenAI-compatible provider) |
-| `openai_api_key` | Password | *Required* | API authentication key |
-| `openai_model` | String | `gemini-2.5-flash` | Model identifier to use |
+| `provider` | List | `gemini` | AI provider: `openai`, `gemini`, `anthropic`, `openrouter`, `ollama`, `custom` |
+| `api_url` | URL | Auto-detected | API endpoint URL. Leave empty to auto-detect based on provider |
+| `api_key` | Password | *Required* | API authentication key (not required for Ollama) |
+| `model` | List | `gemini-2.0-flash` | Model to use. Select from dropdown or choose "custom" |
 | `log_level` | List | `info` | Logging level: `debug`, `info`, `warning`, `error` |
 | `system_prompt_file` | String | `""` (empty) | Optional: Path to custom system prompt file (relative to `/config`) |
 | `temperature` | String | `""` (empty) | Optional: Model temperature (0.0-2.0). Lower=more focused, higher=more creative. Empty uses model default |
 | `enable_cache_control` | Boolean | `false` | Enable prompt caching for Anthropic Claude models to reduce costs and improve response time |
 | `usage_tracking` | List | `stream_options` | Token usage tracking method: `stream_options` (real-time), `usage` (post-response), or `disabled` |
 
+#### Auto-detected API URLs
+
+When you select a provider, the API URL is automatically configured:
+
+| Provider | Auto-configured URL |
+|----------|---------------------|
+| `openai` | `https://api.openai.com/v1` |
+| `gemini` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
+| `anthropic` | `https://api.anthropic.com/v1` |
+| `openrouter` | `https://openrouter.ai/api/v1` |
+| `ollama` | `http://localhost:11434/v1` |
+| `custom` | Enter your own URL |
+
 ### AI Provider Setup
 
-The add-on supports any OpenAI-compatible API endpoint. The default configuration uses Google Cloud's Gemini API, but you can easily switch to any other provider.
+The add-on supports multiple AI providers with easy dropdown selection. Simply select your provider, enter your API key, and choose a model.
 
-#### Google Cloud (Default)
+#### Google Gemini (Default)
 
 **Best for:** Fast responses, cost-effective, high quality
 
-The add-on is configured by default to use Google Cloud's Gemini API.
-
 1. Sign up at https://aistudio.google.com/
 2. Create an API key
-3. The default configuration should work:
+3. Configure:
    ```yaml
-   openai_api_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
-   openai_api_key: "your-google-api-key"
-   openai_model: "gemini-2.5-flash"
-   usage_tracking: "stream_options"
+   provider: "gemini"
+   api_key: "your-google-api-key"
+   model: "gemini-2.0-flash"  # Select from dropdown
    ```
 
-**Recommended models:**
-- `gemini-2.5-flash` - Default, best balance of speed and quality
-- `gemini-2.0-flash-exp` - Experimental, cutting-edge features
-- `gemini-2.5-pro` - Higher quality, longer context
-- `gemini-1.5-flash` - Faster, lower cost
+**Available models in dropdown:**
+- `gemini-2.5-pro-preview-05-06` - Latest, highest quality
+- `gemini-2.5-flash-preview-04-17` - Fast and capable
+- `gemini-2.0-flash` - Default, great balance
+- `gemini-1.5-pro` - Longer context
+- `gemini-1.5-flash` - Fastest
 
 #### OpenAI
 
@@ -185,19 +200,19 @@ The add-on is configured by default to use Google Cloud's Gemini API.
 
 1. Sign up at https://platform.openai.com/
 2. Create an API key
-3. Configure the add-on:
+3. Configure:
    ```yaml
-   openai_api_url: "https://api.openai.com/v1"
-   openai_api_key: "sk-proj-your-key-here"
-   openai_model: "gpt-4o"
-   usage_tracking: "stream_options"
+   provider: "openai"
+   api_key: "sk-proj-your-key-here"
+   model: "gpt-4o"  # Select from dropdown
    ```
 
-**Recommended models:**
-- `gpt-5-mini` - Best seed and cost but requires validation
-- `gpt-4o` - Best balance of speed and quality without validation
-- `gpt-4o-mini` - Faster, lower cost
-- `gpt-5` - Advanced reasoning (slower, more expensive)
+**Available models in dropdown:**
+- `gpt-4o` - Best balance of speed and quality
+- `gpt-4.1` - Latest GPT-4 variant
+- `gpt-4.1-mini` - Faster, lower cost
+- `gpt-4-turbo` - High performance
+- `o4-mini` - Reasoning model
 
 #### OpenRouter
 
@@ -205,54 +220,78 @@ The add-on is configured by default to use Google Cloud's Gemini API.
 
 1. Sign up at https://openrouter.ai/
 2. Create an API key
-3. Configure the add-on:
+3. Configure:
    ```yaml
-   openai_api_url: "https://openrouter.ai/api/v1"
-   openai_api_key: "sk-or-v1-your-key"
-   openai_model: "anthropic/claude-3.5-sonnet"
+   provider: "openrouter"
+   api_key: "sk-or-v1-your-key"
+   model: "anthropic/claude-3.5-sonnet"  # Select from dropdown or enter custom
    ```
+
+**Available models in dropdown:**
+- `openai/gpt-4o`
+- `anthropic/claude-3.5-sonnet`
+- `google/gemini-2.0-flash-exp:free`
+- `meta-llama/llama-3.3-70b-instruct`
 
 #### Anthropic
 
-Access to the Claude family of models
+**Best for:** Advanced reasoning, long context
 
 1. Sign up at https://console.anthropic.com/
 2. Create an API key
-3. Configure the add-on:
+3. Configure:
    ```yaml
-   openai_api_url: "https://api.anthropic.com/v1/"
-   openai_api_key: "sk-or-v1-your-key"
-   openai_model: "claude-sonnet-4-5"
+   provider: "anthropic"
+   api_key: "sk-ant-your-key"
+   model: "claude-sonnet-4-20250514"  # Select from dropdown
+   enable_cache_control: true  # Enable for Claude
+   usage_tracking: "usage"
    ```
 
-**Recommended models:**
-- `claude-4.5-haiku` - Fast inexpensive reasoning
-- `claude-4.5-sonnet` - Excellent reasoning
+**Available models in dropdown:**
+- `claude-sonnet-4-20250514` - Latest Sonnet
+- `claude-3-5-sonnet-latest` - Excellent reasoning
+- `claude-3-5-haiku-latest` - Fast and efficient
+- `claude-3-opus-latest` - Most capable
 
 
-#### Local Ollama
+#### Ollama (Local)
 
 **Best for:** Privacy, offline use, no API costs
 
 1. Install Ollama: https://ollama.ai/
 2. Pull a model:
    ```bash
-   ollama pull llama3.2
+   ollama pull llama3.3
    ```
 3. Ensure Ollama is accessible from Home Assistant
-4. Configure the add-on:
+4. Configure:
    ```yaml
-   openai_api_url: "http://host.docker.internal:11434/v1"
-   openai_api_key: "ollama"
-   openai_model: "llama3.2"
+   provider: "ollama"
+   api_key: ""  # Not required for Ollama
+   model: "llama3.3"  # Select from dropdown or enter custom
+   api_url: "http://host.docker.internal:11434/v1"  # Override if needed
+   usage_tracking: "disabled"
    ```
 
-**Recommended models:**
-- `llama3.2` - Good general performance
+**Available models in dropdown:**
+- `llama3.3` - Good general performance
+- `qwen2.5-coder` - Optimized for code
+- `deepseek-r1` - Strong reasoning
 - `mistral` - Fast and capable
-- `codellama` - Optimized for code
 
 **Note:** Performance depends on your hardware. GPU recommended.
+
+#### Custom Provider
+
+**Best for:** Self-hosted APIs, other OpenAI-compatible providers
+
+```yaml
+provider: "custom"
+api_url: "https://your-custom-api.com/v1"
+api_key: "your-key"
+model: "your-model-name"
+```
 
 ### Custom System Prompt
 
