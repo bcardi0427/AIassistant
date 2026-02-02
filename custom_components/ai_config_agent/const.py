@@ -43,15 +43,16 @@ PROVIDER_URLS = {
 # Popular models for each provider
 PROVIDER_MODELS = {
     PROVIDER_OPENAI: [
-        "gpt-4o",
-        "gpt-4.1",
-        "gpt-4.1-mini",
-        "gpt-4-turbo",
-        "o4-mini",
+        "gpt-5.2",  # Best general choice (early 2026)
+        "gpt-5.2-turbo",  # Cheaper/faster variant
+        "gpt-5.2-lite",  # Lower-cost for simple tasks
+        "gpt-5.2-mini",  # Very low-cost minimal model
+        "gpt-5.2-premium",  # Highest quality / longest context
     ],
     PROVIDER_GEMINI: [
+        "gemini-3-flash-preview",  # Recommended for Gen 3 (early 2026)
+        "gemini-2.5-flash",  # Stable production model
         "gemini-2.5-pro-preview-05-06",
-        "gemini-2.5-flash-preview-04-17",
         "gemini-2.0-flash",
         "gemini-1.5-pro",
         "gemini-1.5-flash",

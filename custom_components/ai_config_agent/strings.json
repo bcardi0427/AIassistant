@@ -8,12 +8,18 @@
           "provider": "AI Provider"
         }
       },
-      "configure": {
-        "title": "Configure {provider}",
-        "description": "Enter your API credentials and select a model.",
+      "credentials": {
+        "title": "Connect to {provider}",
+        "description": "Enter your API credentials. We'll fetch available models automatically.",
         "data": {
           "api_url": "API URL (leave empty for default)",
-          "api_key": "API Key",
+          "api_key": "API Key"
+        }
+      },
+      "configure": {
+        "title": "Configure {provider}",
+        "description": "Found {models_count} models. Select your model and configure options.",
+        "data": {
           "model": "Model",
           "log_level": "Log Level",
           "temperature": "Temperature (optional)",
@@ -35,9 +41,11 @@
     "step": {
       "init": {
         "title": "AI Configuration Agent Options",
+        "description": "Models available: {models_count}",
         "data": {
           "provider": "AI Provider",
           "api_url": "API URL",
+          "api_key": "API Key",
           "model": "Model",
           "log_level": "Log Level",
           "temperature": "Temperature (optional)",
