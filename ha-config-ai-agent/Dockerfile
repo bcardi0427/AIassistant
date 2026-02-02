@@ -4,6 +4,9 @@ FROM $BUILD_FROM
 # Set working directory
 WORKDIR /app
 
+# Install git and other system dependencies
+RUN apk add --no-cache git
+
 # Copy requirements and install dependencies
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
@@ -19,7 +22,7 @@ RUN chmod a+x ./run.sh
 
 # Labels for Home Assistant
 LABEL \
-    io.hass.version="0.3.0" \
+    io.hass.version="0.7.0" \
     io.hass.type="addon" \
     io.hass.arch="armhf|armv7|aarch64|i386|amd64"
 
