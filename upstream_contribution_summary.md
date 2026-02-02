@@ -39,4 +39,12 @@ One common issue with agentic tool-use is the "orphaned tool response" (Error 40
 These changes make the agent significantly more reliable for complex Home Assistant configurations. By giving the AI "eyes" into the current system state and logs, we have drastically reduced the rate of invalid YAML generation and hallucinated service calls.
 
 ---
-**Current Version:** 0.6.3
+### 5. Git Integration (The "Safety Net")
+We have added native Git tools to the agent to provide a professional DevOps-style workflow for configuration management.
+
+*   **git_status**: Allows the agent to audit pending changes before submitting them.
+*   **git_commit**: Enables the agent to "save" successful changes with descriptive messages.
+*   **git_rollback**: A high-confidence recovery tool that can instantly revert the entire config directory to the last known working state if a reload fails or errors are detected in the logs.
+
+---
+**Current Version:** 0.7.0

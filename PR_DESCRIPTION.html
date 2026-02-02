@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PR_DESCRIPTION.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="pull-request-native-tools-openai-consolidation-and-stability-fixes">Pull Request: Native Tools, OpenAI Consolidation, and Stability Fixes</h1>
+<h2 id="summary">Summary</h2>
+<p>This release (v0.6.0) significantly enhances the Agent's capabilities by adding <strong>Native Tools</strong> for direct interaction with Home Assistant (Services, States, Templates, Logs). It also consolidates the logic to use the <strong>OpenAI-compatible API only</strong>, removing the complex and crash-prone Gemini native client.</p>
+<h2 id="changes">Changes</h2>
+<h3 id="%F0%9F%9B%A0%EF%B8%8F-new-native-tools-capabilities">🛠️ New Native Tools (Capabilities)</h3>
+<p>The Agent can now &quot;see&quot; and &quot;test&quot; your Home Assistant instance directly:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Tool Name</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>get_services(domain)</code></td>
+<td style="text-align:left">Lists available services (e.g., <code>light.turn_on</code>, <code>script.reload</code>) to prevent hallucinated service calls.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>get_entity_states(id)</code></td>
+<td style="text-align:left">Checks the current state/attributes of entities to verify if automations are triggering correctly.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>validate_template(tmpl)</code></td>
+<td style="text-align:left">Renders Jinja2 templates (e.g., <code>{{ states('sensor.time') }}</code>) to verify logic before applying changes.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>check_config()</code></td>
+<td style="text-align:left">Triggers a Home Assistant Core configuration check to ensure YAML validity.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>read_logs(lines)</code></td>
+<td style="text-align:left">Reads the tail of <code>home-assistant.log</code> to diagnose errors after a failed reload.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="%F0%9F%A7%B9-openai-consolidation">🧹 OpenAI Consolidation</h3>
+<ul>
+<li><strong>Removed Native Gemini Client</strong>: The project now uses the standard OpenAI-compatible client for <em>all</em> providers (Gemini, OpenAI, Claude, Local).</li>
+<li><strong>Simplified Dependency Chain</strong>: Removed <code>google-genai</code> dependency to prevent conflicts and installation issues.</li>
+<li><strong>Unified Logic</strong>: All AI interactions now flow through a single, stable code path.</li>
+</ul>
+<h3 id="%F0%9F%90%9B-bug-fixes">🐛 Bug Fixes</h3>
+<ul>
+<li><strong>Fixed &quot;Bad Gateway&quot; (502) Error</strong>: Resolved a critical startup crash caused by an <code>IndentationError</code> in <code>agent_system.py</code>.</li>
+<li><strong>Fixed Crash Loop</strong>: Removed orphaned code blocks that were causing the add-on to exit immediately.</li>
+</ul>
+<h2 id="files-changed">Files Changed</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">File</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>src/agents/tools.py</code></td>
+<td style="text-align:left">Added implementation for 5 new tools (<code>get_services</code>, <code>read_logs</code>, etc.)</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>src/ha/ha_websocket.py</code></td>
+<td style="text-align:left">Added WebSocket support for service listing, state fetching, and template rendering</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>src/agents/agent_system.py</code></td>
+<td style="text-align:left">Registered new tools with OpenAI client; removed Gemini native code</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>requirements.txt</code></td>
+<td style="text-align:left">Cleaned up dependencies</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>config.yaml</code>, <code>build.yaml</code>, <code>manifest.json</code></td>
+<td style="text-align:left">Version bump to 0.6.0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="testing">Testing</h2>
+<ul>
+<li><strong>Native Tools</strong>: Verified that the agent can successfully list services and read logs via WebSocket/File API.</li>
+<li><strong>Stability</strong>: Verified that the add-on starts successfully and maintains a stable connection.</li>
+<li><strong>OpenAI Streaming</strong>: Verified that chat responses stream correctly without the native Gemini client.</li>
+</ul>
+<hr>
+<h3 id="%F0%9F%93%84-documentation-upgrade">📄 Documentation Upgrade</h3>
+<ul>
+<li><strong>Service Schema Awareness</strong>: Updated the Agent's system prompt to explicitly inform it that <code>get_services</code> returns full field schemas (arguments, types, selectors). This &quot;unlocks&quot; the ability for the agent to validate its own service calls against the actual definitions in your specific Home Assistant instance.</li>
+</ul>
+<hr>
+<h3 id="%F0%9F%90%9B-stability-fix">🐛 Stability Fix</h3>
+<ul>
+<li><strong>History Sanitization</strong>: Added automatic filtering of &quot;orphaned&quot; tool messages in the conversation history. This prevents the &quot;Invalid parameter: messages with role 'tool'...&quot; error (400 Bad Request) that could occur if the chat history lost synchronization with the backend.</li>
+</ul>
+<hr>
+<p><strong>Version:</strong> 0.6.3</p>
+
+</body>
+</html>

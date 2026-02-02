@@ -59,4 +59,11 @@ The Agent can now "see" and "test" your Home Assistant instance directly:
 
 ---
 
-**Version:** 0.6.3
+### 🛡️ Git Integration (Safety Net)
+- **Version Control Tools**: Added `git_status`, `git_commit`, and `git_rollback` natively to the agent.
+- **Auto-Recovery**: The agent can now revert the entire configuration directory to the last known working state if a change fails or causes errors.
+- **Audit Trail**: Every change can now be committed with a descriptive message, creating a clean history of AI-driven configuration changes.
+
+---
+
+**Version:** 0.7.0

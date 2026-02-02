@@ -6,6 +6,7 @@ These wrap the ConfigurationManager for safe AI operations.
 """
 import logging
 import os
+import asyncio
 from typing import Dict, Any, Optional, List, TYPE_CHECKING
 from ..config import ConfigurationManager, ConfigurationError
 from ..ha.ha_websocket import get_lovelace_config_as_yaml
@@ -964,4 +965,115 @@ class AgentTools:
             }
         except Exception as e:
             return {"error": str(e)}
+
+    async def git_status(self) -> Dict[str, Any]:
+        """
+        Get the current Git status of the configuration directory.
+        Shows which files have been modified but not yet committed.
+        Useful for auditing changes before committing.
+        """
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "git", "status", "--porcelain",
+                cwd=str(self.config_manager.config_dir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode != 0:
+                return {"error": stderr.decode().strip(), "success": False}
+            
+            status_text = stdout.decode().strip()
+            return {
+                "success": True,
+                "status": status_text if status_text else "Clean (no changes)",
+                "raw_output": status_text
+            }
+        except Exception as e:
+            return {"error": f"Failed to get git status: {str(e)}", "success": False}
+
+    async def git_commit(self, message: str) -> Dict[str, Any]:
+        """
+        Commit current changes to Git.
+        Always call this after successfully applying and verifying a set of changes.
+
+        Args:
+            message: Descriptive commit message (e.g., "Add morning routine automation")
+        """
+        try:
+            # Set git if not configured (best effort)
+            await asyncio.create_subprocess_exec(
+                "git", "config", "user.name", "AI Config Agent",
+                cwd=str(self.config_manager.config_dir)
+            )
+            await asyncio.create_subprocess_exec(
+                "git", "config", "user.email", "agent@ha-config-ai-agentui",
+                cwd=str(self.config_manager.config_dir)
+            )
+
+            # Add all changes
+            add_proc = await asyncio.create_subprocess_exec(
+                "git", "add", ".",
+                cwd=str(self.config_manager.config_dir),
+                stderr=asyncio.subprocess.PIPE
+            )
+            _, add_stderr = await add_proc.communicate()
+            if add_proc.returncode != 0:
+                 return {"error": f"git add failed: {add_stderr.decode().strip()}", "success": False}
+
+            # Commit
+            commit_proc = await asyncio.create_subprocess_exec(
+                "git", "commit", "-m", message,
+                cwd=str(self.config_manager.config_dir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await commit_proc.communicate()
+            if commit_proc.returncode != 0:
+                # If nothing to commit, return success anyway but with message
+                if "nothing to commit" in stderr.decode().lower() or "nothing to commit" in stdout.decode().lower():
+                    return {"success": True, "message": "Nothing to commit (clean working tree)"}
+                return {"error": f"git commit failed: {stderr.decode().strip()}", "success": False}
+
+            return {
+                "success": True,
+                "message": f"Successfully committed changes: {message}",
+                "output": stdout.decode().strip()
+            }
+        except Exception as e:
+            return {"error": f"Git commit failed: {str(e)}", "success": False}
+
+    async def git_rollback(self) -> Dict[str, Any]:
+        """
+        Rollback to the last committed state.
+        Discards all local changes in the config directory.
+        Use this if a change caused errors or if you want to undo recent uncommitted modifications.
+        """
+        try:
+            # First reset any staged/unstaged changes
+            reset_proc = await asyncio.create_subprocess_exec(
+                "git", "reset", "--hard", "HEAD",
+                cwd=str(self.config_manager.config_dir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await reset_proc.communicate()
+            if reset_proc.returncode != 0:
+                return {"error": f"git reset failed: {stderr.decode().strip()}", "success": False}
+
+            # Also clean untracked files
+            clean_proc = await asyncio.create_subprocess_exec(
+                "git", "clean", "-fd",
+                cwd=str(self.config_manager.config_dir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            await clean_proc.communicate()
+            
+            return {
+                "success": True,
+                "message": "Successfully rolled back all changes to the last committed state."
+            }
+        except Exception as e:
+            return {"error": f"Git rollback failed: {str(e)}", "success": False}
 

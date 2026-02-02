@@ -352,6 +352,45 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                         }
                     }
                 },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "git_status",
+                        "description": "Get current Git status of the configuration files. Shows uncommitted changes (modified, deleted, or new tracked files). Use this to audit before committing.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {}
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "git_commit",
+                        "description": "Commit all current changes to Git. Always call this after a change is successfully verified (applied and passed check_config). Provide a clear message of what was changed.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Description of the changes made (e.g. 'Add living room light automation')"
+                                }
+                            },
+                            "required": ["message"]
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "git_rollback",
+                        "description": "Rollback all uncommitted changes to the last known working commit. Use this if a change fails validation, causes errors in logs, or if you want to undo recent modifications.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {}
+                        }
+                    }
+                },
                 propose_tool
             ]
 
@@ -609,6 +648,15 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                     elif function_name == "read_logs":
                         result = await self.tools.read_logs(**function_args)
                         logger.info(f"[ITERATION {iteration}] Tool result: Logs read")
+                    elif function_name == "git_status":
+                        result = await self.tools.git_status(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Git status retrieved")
+                    elif function_name == "git_commit":
+                        result = await self.tools.git_commit(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Git commit complete")
+                    elif function_name == "git_rollback":
+                        result = await self.tools.git_rollback(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Git rollback complete")
                     else:
                         result = {"success": False, "error": f"Unknown tool: {function_name}"}
                         logger.error(f"[ITERATION {iteration}] Unknown tool requested: {function_name}")
