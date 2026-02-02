@@ -166,8 +166,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
             }
             return
 
-            })
-            return
+
 
         try:
             logger.info(f"Agent streaming user message: {user_message[:100]}...")
