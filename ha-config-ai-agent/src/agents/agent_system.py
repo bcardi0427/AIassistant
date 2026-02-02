@@ -250,7 +250,83 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                     "description": "Optional text to search for in file contents (case-insensitive). Only files containing this text will be returned. Omit to return all files."
                                 }
                             },
-                            "required": []
+                           "required": []
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_services",
+                        "description": "Get available services, optionally filtered by domain. Returns service names and descriptions. Useful for checking correct service calls.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "domain": {
+                                    "type": "string",
+                                    "description": "Optional domain to filter by (e.g. 'light')"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_entity_states",
+                        "description": "Get current state of entities. Useful for checking values/attributes or debugging automations.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "entity_id": {
+                                    "type": "string",
+                                    "description": "Optional specific entity_id to look up. If omitted, returns list of all states."
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "validate_template",
+                        "description": "Render a Jinja2 template to verify it works as expected.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "template": {
+                                    "type": "string",
+                                    "description": "The template string to render."
+                                }
+                            },
+                            "required": ["template"]
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "check_config",
+                        "description": "Trigger a Home Assistant configuration check to verify validity. Use this before proposing complex changes.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {}
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "read_logs",
+                        "description": "Read the last N lines of home-assistant.log. Useful for diagnosing errors.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "lines": {
+                                    "type": "integer",
+                                    "description": "Number of lines to read (default 50, max 200)"
+                                }
+                            }
                         }
                     }
                 },
@@ -496,6 +572,21 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                         else:
                             result = await self.tools.propose_config_changes(**function_args)
                             logger.info(f"[ITERATION {iteration}] Tool result: success={result.get('success')}, changeset_id={result.get('changeset_id')}")
+                    elif function_name == "get_services":
+                        result = await self.tools.get_services(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Retrieved services")
+                    elif function_name == "get_entity_states":
+                        result = await self.tools.get_entity_states(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Retrieved states")
+                    elif function_name == "validate_template":
+                        result = await self.tools.validate_template(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Template rendered")
+                    elif function_name == "check_config":
+                        result = await self.tools.check_config(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Config check complete")
+                    elif function_name == "read_logs":
+                        result = await self.tools.read_logs(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Logs read")
                     else:
                         result = {"success": False, "error": f"Unknown tool: {function_name}"}
                         logger.error(f"[ITERATION {iteration}] Unknown tool requested: {function_name}")

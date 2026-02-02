@@ -1,82 +1,50 @@
-# Pull Request: Provider Selection, Model Dropdowns, and Gemini 3 Compatibility
+# Pull Request: Native Tools, OpenAI Consolidation, and Stability Fixes
 
 ## Summary
 
-This PR introduces a more user-friendly configuration experience and fixes a critical issue with Google Gemini 3 models.
+This release (v0.6.0) significantly enhances the Agent's capabilities by adding **Native Tools** for direct interaction with Home Assistant (Services, States, Templates, Logs). It also consolidates the logic to use the **OpenAI-compatible API only**, removing the complex and crash-prone Gemini native client.
 
 ## Changes
 
-### 🎛️ Provider Selection
+### 🛠️ New Native Tools (Capabilities)
 
-- Added a **provider dropdown** in the configuration UI with support for:
-  - OpenAI
-  - Google Gemini
-  - Anthropic (Claude)
-  - OpenRouter
-  - Ollama (Local)
-  - Custom (any OpenAI-compatible API)
+The Agent can now "see" and "test" your Home Assistant instance directly:
 
-### 📋 Model Dropdowns
+| Tool Name | Description |
+| :--- | :--- |
+| `get_services(domain)` | Lists available services (e.g., `light.turn_on`, `script.reload`) to prevent hallucinated service calls. |
+| `get_entity_states(id)` | Checks the current state/attributes of entities to verify if automations are triggering correctly. |
+| `validate_template(tmpl)` | Renders Jinja2 templates (e.g., `{{ states('sensor.time') }}`) to verify logic before applying changes. |
+| `check_config()` | Triggers a Home Assistant Core configuration check to ensure YAML validity. |
+| `read_logs(lines)` | Reads the tail of `home-assistant.log` to diagnose errors after a failed reload. |
 
-- Added **pre-populated model lists** for each provider with popular models
-- Models are dynamically shown based on the selected provider (in HACS component)
-- Users can still enter custom model names if needed
+### 🧹 OpenAI Consolidation
 
-### 🔗 Auto-URL Detection
+- **Removed Native Gemini Client**: The project now uses the standard OpenAI-compatible client for *all* providers (Gemini, OpenAI, Claude, Local).
+- **Simplified Dependency Chain**: Removed `google-genai` dependency to prevent conflicts and installation issues.
+- **Unified Logic**: All AI interactions now flow through a single, stable code path.
 
-- When a provider is selected, the **API URL is automatically configured**
-- Users no longer need to know the correct endpoint URL for each provider
-- Custom URLs can still be specified for advanced use cases
+### 🐛 Bug Fixes
 
-### 🐛 Gemini 3 Compatibility Fix
-
-- Fixed the "Function call is missing a thought_signature" error when using Gemini 3 models
-- The agent now captures and echoes `thought_signature` in tool responses for proper Chain-of-Thought continuation
-
-### 🔄 Backward Compatibility
-
-- Legacy `openai_api_url`, `openai_api_key`, and `openai_model` config keys are still supported
-- Existing installations will continue to work without reconfiguration
-- Migration warning is logged when legacy keys are detected
-
-### 📝 Generic Branding
-
-- Renamed configuration keys from `openai_*` to generic names (`api_url`, `api_key`, `model`)
-- UI labels are now provider-agnostic ("API Key" instead of "OpenAI API Key")
+- **Fixed "Bad Gateway" (502) Error**: Resolved a critical startup crash caused by an `IndentationError` in `agent_system.py`.
+- **Fixed Crash Loop**: Removed orphaned code blocks that were causing the add-on to exit immediately.
 
 ## Files Changed
 
 | File | Description |
 | :--- | :--- |
-| `custom_components/ai_config_agent/const.py` | Added provider constants, URLs, and model lists |
-| `custom_components/ai_config_agent/config_flow.py` | Two-step setup flow (provider → configure) |
-| `custom_components/ai_config_agent/strings.json` | Updated UI labels |
-| `custom_components/ai_config_agent/__init__.py` | Provider-aware URL detection |
-| `custom_components/ai_config_agent/manifest.json` | Version bump to 0.5.0 |
-| `ha-config-ai-agent/config.yaml` | Provider/model dropdowns, version 0.5.0 |
-| `ha-config-ai-agent/run.sh` | Migration logic, provider auto-URL |
-| `ha-config-ai-agent/src/agents/agent_system.py` | Gemini 3 thought_signature fix |
+| `src/agents/tools.py` | Added implementation for 5 new tools (`get_services`, `read_logs`, etc.) |
+| `src/ha/ha_websocket.py` | Added WebSocket support for service listing, state fetching, and template rendering |
+| `src/agents/agent_system.py` | Registered new tools with OpenAI client; removed Gemini native code |
+| `requirements.txt` | Cleaned up dependencies |
+| `config.yaml`, `build.yaml`, `manifest.json` | Version bump to 0.6.0 |
 
 ## Testing
 
-- Tested with Google Gemini (`gemini-2.0-flash`) - working
-- Tested provider auto-URL detection - working
-- Tested backward compatibility with legacy config keys - working
-
-## Breaking Changes
-
-Config keys have been renamed:
-
-- `openai_api_url` → `api_url`
-- `openai_api_key` → `api_key`
-- `openai_model` → `model`
-
-**Migration is automatic** - the `run.sh` script detects legacy keys and maps them to the new format.
-
-## Screenshots
-
-(Add screenshots of the new configuration UI here if desired)
+- **Native Tools**: Verified that the agent can successfully list services and read logs via WebSocket/File API.
+- **Stability**: Verified that the add-on starts successfully and maintains a stable connection.
+- **OpenAI Streaming**: Verified that chat responses stream correctly without the native Gemini client.
 
 ---
 
-**Version:** 0.5.0
+**Version:** 0.6.0

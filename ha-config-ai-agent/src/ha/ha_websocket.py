@@ -394,9 +394,86 @@ class HomeAssistantWebSocket:
             result = await self.call("config/area_registry/update", **params)
             logger.info(f"Successfully updated area {area_id}")
             return result
-        except Exception as e:
             logger.error(f"Failed to update area: {e}")
             raise
+
+    async def list_services(self) -> Dict[str, Any]:
+        """
+        Get list of all services and their descriptions.
+
+        Returns:
+            Dictionary of domain -> services
+        """
+        logger.info("Retrieving services via WebSocket")
+        try:
+            result = await self.call("get_services")
+            logger.info(f"Successfully retrieved services for {len(result)} domains")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to retrieve services: {e}")
+            raise
+
+    async def get_states(self) -> List[Dict[str, Any]]:
+        """
+        Get all entity states.
+
+        Returns:
+            List of state dictionaries
+        """
+        logger.info("Retrieving states via WebSocket")
+        try:
+            result = await self.call("get_states")
+            logger.info(f"Successfully retrieved {len(result)} states")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to retrieve states: {e}")
+            raise
+
+    async def render_template(self, template: str) -> str:
+        """
+        Render a Jinja2 template.
+
+        Args:
+            template: The template string to render
+
+        Returns:
+            Rendered result string
+        """
+        logger.info("Rendering template via WebSocket")
+        try:
+            result = await self.call(
+                "render_template",
+                template=template,
+                timeout=3
+            )
+            return result.get("result")
+        except Exception as e:
+            logger.error(f"Template rendering failed: {e}")
+            raise
+
+    async def validate_config(self) -> Dict[str, Any]:
+        """
+        Trigger a configuration check.
+
+        Returns:
+            Result of config check
+        """
+        logger.info("checking configuration via WebSocket")
+        try:
+            # Note: This calls the same service helper.check_config uses
+            result = await self.call(
+                "call_service",
+                domain="homeassistant",
+                service="check_config",
+                return_response=True,
+                service_data={}
+            )
+            logger.info("Config check complete")
+            return result
+        except Exception as e:
+            logger.error(f"Config check failed: {e}")
+            raise
+
 
 
 async def get_lovelace_config_as_yaml(url: str, token: str) -> Optional[str]:

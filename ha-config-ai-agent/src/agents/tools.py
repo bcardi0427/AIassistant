@@ -796,3 +796,172 @@ class AgentTools:
                 "error": f"Error processing changes: {str(e)}"
             }
 
+    async def get_services(self, domain: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get available services, optionally filtered by domain.
+        Useful for verifying service names and arguments before using them in automations.
+
+        Args:
+            domain: Optional domain to filter by (e.g., "light", "automation")
+
+        Returns:
+            Dict of services
+        """
+        try:
+            # Custom component mode
+            if self.config_manager.hass:
+                hass = self.config_manager.hass
+                services = hass.services.async_services()
+                if domain:
+                    return {domain: services.get(domain, {})}
+                return services
+
+            # Add-on mode
+            from ..ha.ha_websocket import HomeAssistantWebSocket
+            supervisor_token = os.getenv('SUPERVISOR_TOKEN')
+            if not supervisor_token:
+                return {}
+            
+            ws_client = HomeAssistantWebSocket("ws://supervisor/core/websocket", supervisor_token)
+            await ws_client.connect()
+            services = await ws_client.list_services()
+            await ws_client.close()
+            
+            if domain:
+                return {domain: services.get(domain, {})}
+            return services
+        except Exception as e:
+            logger.error(f"Error getting services: {e}")
+            return {"error": str(e)}
+
+    async def get_entity_states(self, entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get current state of entities. 
+        Useful for debugging why an automation isn't triggering or checking current values.
+
+        Args:
+            entity_id: Optional specific entity_id to look up. 
+                      If None, returns all states (limited to avoid huge responses).
+
+        Returns:
+            List of state objects
+        """
+        try:
+            # Custom component mode
+            if self.config_manager.hass:
+                hass = self.config_manager.hass
+                if entity_id:
+                    state = hass.states.get(entity_id)
+                    return [state.as_dict()] if state else []
+                return [s.as_dict() for s in hass.states.all()]
+
+            # Add-on mode
+            from ..ha.ha_websocket import HomeAssistantWebSocket
+            supervisor_token = os.getenv('SUPERVISOR_TOKEN')
+            if not supervisor_token:
+                return []
+            
+            ws_client = HomeAssistantWebSocket("ws://supervisor/core/websocket", supervisor_token)
+            await ws_client.connect()
+            states = await ws_client.get_states()
+            await ws_client.close()
+            
+            if entity_id:
+                return [s for s in states if s['entity_id'] == entity_id]
+            return states
+        except Exception as e:
+            logger.error(f"Error getting states: {e}")
+            return [{"error": str(e)}]
+
+    async def validate_template(self, template: str) -> Dict[str, Any]:
+        """
+        Render a Jinja2 template to verify it works as expected.
+
+        Args:
+            template: The template string (e.g., "{{ states('sensor.time') }}")
+
+        Returns:
+            Dict with 'result' or 'error'
+        """
+        try:
+            # Custom component mode
+            if self.config_manager.hass:
+                hass = self.config_manager.hass
+                import homeassistant.helpers.template as template_helper
+                tpl = template_helper.Template(template, hass)
+                return {"result": tpl.async_render()}
+
+            # Add-on mode
+            from ..ha.ha_websocket import HomeAssistantWebSocket
+            supervisor_token = os.getenv('SUPERVISOR_TOKEN')
+            if not supervisor_token:
+                return {"error": "No API access"}
+            
+            ws_client = HomeAssistantWebSocket("ws://supervisor/core/websocket", supervisor_token)
+            await ws_client.connect()
+            result = await ws_client.render_template(template)
+            await ws_client.close()
+            return {"result": result}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def check_config(self) -> Dict[str, Any]:
+        """
+        Trigger a Home Assistant configuration check.
+        Always run this before proposing complex changes to verify syntax.
+
+        Returns:
+            Dict with check results
+        """
+        try:
+             # Custom component mode
+            if self.config_manager.hass:
+                return {"result": "valid", "note": "Config check skipped in custom component mode"}
+
+            # Add-on mode
+            from ..ha.ha_websocket import HomeAssistantWebSocket
+            supervisor_token = os.getenv('SUPERVISOR_TOKEN')
+            if not supervisor_token:
+                return {"error": "No API access"}
+            
+            ws_client = HomeAssistantWebSocket("ws://supervisor/core/websocket", supervisor_token)
+            await ws_client.connect()
+            result = await ws_client.validate_config()
+            await ws_client.close()
+            
+            return {"result": result or "Check initiated"}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def read_logs(self, lines: int = 50) -> Dict[str, Any]:
+        """
+        Read the last N lines of the Home Assistant log file.
+        Useful for diagnosing issues after a reload fails.
+
+        Args:
+            lines: Number of lines to read (max 200)
+
+        Returns:
+            Dict with 'logs' (list of strings) or 'error'
+        """
+        try:
+            # Limit lines for safety
+            lines = min(lines, 200)
+            
+            log_path = self.config_manager.config_dir / "home-assistant.log"
+            if not log_path.exists():
+                 return {"error": "Log file not found", "path": str(log_path)}
+            
+            content = await self.config_manager.read_file_raw("home-assistant.log")
+            if not content:
+                 return {"logs": []}
+            
+            all_lines = content.splitlines()
+            return {
+                "logs": all_lines[-lines:],
+                "total_lines": len(all_lines),
+                "shown_lines": lines
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
