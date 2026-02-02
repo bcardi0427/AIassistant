@@ -435,7 +435,28 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 # Execute each tool call and stream results immediately
                 for tool_idx, tool_call in enumerate(accumulated_tool_calls):
                     function_name = tool_call["function"]["name"]
-                    function_args = json.loads(tool_call["function"]["arguments"])
+                    
+                    # Parse function arguments with error handling
+                    raw_args = tool_call["function"]["arguments"]
+                    try:
+                        function_args = json.loads(raw_args)
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"[ITERATION {iteration}] Failed to parse tool arguments: {e}")
+                        logger.debug(f"Raw arguments: {raw_args}")
+                        # Try to extract first valid JSON object
+                        try:
+                            # Handle case where multiple JSON objects are concatenated
+                            import re
+                            match = re.match(r'^(\{[^{}]*\})', raw_args)
+                            if match:
+                                function_args = json.loads(match.group(1))
+                                logger.info(f"[ITERATION {iteration}] Extracted valid JSON from malformed response")
+                            else:
+                                function_args = {}
+                                logger.error(f"[ITERATION {iteration}] Could not extract valid JSON, using empty args")
+                        except Exception:
+                            function_args = {}
+                            logger.error(f"[ITERATION {iteration}] JSON recovery failed, using empty args")
 
                     logger.info(f"[ITERATION {iteration}] Calling tool: {function_name}")
 
