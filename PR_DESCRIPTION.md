@@ -54,6 +54,7 @@ The Agent can now "see" and "test" your Home Assistant instance directly:
 ---
 
 ### 🐛 Stability Fix
+
 - **History Sanitization**: Added automatic filtering of "orphaned" tool messages in the conversation history. This prevents the "Invalid parameter: messages with role 'tool'..." error (400 Bad Request) that could occur if the chat history lost synchronization with the backend.
 
 ---
