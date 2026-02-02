@@ -494,16 +494,18 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
 
                     # Add tool result to messages with cache control on the last tool result
                     is_last_tool = (tool_idx == len(accumulated_tool_calls) - 1)
+                    
+                    # Build clean tool message with only standard OpenAI fields
+                    # Note: thought_signature is not supported in OpenAI-compatible endpoint
                     tool_message = {
                         "role": "tool",
                         "tool_call_id": tool_call["id"],
                         "content": json.dumps(result)
                     }
                     
-                    # Include thought_signature for Gemini 3 models (required for CoT continuation)
+                    # Log if we had a thought_signature (for debugging)
                     if tool_call.get("thought_signature"):
-                        tool_message["thought_signature"] = tool_call["thought_signature"]
-                        logger.debug(f"[ITERATION {iteration}] Including thought_signature in tool response")
+                        logger.debug(f"[ITERATION {iteration}] Thought signature present but not included in message (not supported in OpenAI compat layer)")
                     
                     # Mark the last tool result for caching to preserve full context
                     if self.enable_cache_control and is_last_tool:
