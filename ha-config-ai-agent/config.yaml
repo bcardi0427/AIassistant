@@ -1,5 +1,5 @@
 name: "AI Configuration Agent"
-version: "0.2.0"
+version: "0.3.0"
 slug: "ai-config-agent"
 description: "AI-powered Home Assistant configuration assistant with approval workflow"
 url: "https://github.com/yinzara/ha-config-ai-agent"
@@ -45,19 +45,21 @@ privileged: []
 
 # User-configurable options
 options:
-  openai_api_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
-  openai_api_key: ""
-  openai_model: "gemini-2.5-flash" # Best model for speed and price
+  provider: "gemini"
+  api_url: ""
+  api_key: ""
+  model: "gemini-2.0-flash"
   log_level: "info"
   system_prompt_file: ""
   temperature: ""
   enable_cache_control: false
-  usage_tracking: "stream_options" # Options: "stream_options", "usage", "disabled"
+  usage_tracking: "stream_options"
 
 schema:
-  openai_api_url: url
-  openai_api_key: password?
-  openai_model: str
+  provider: list(openai|gemini|anthropic|openrouter|ollama|custom)
+  api_url: url?
+  api_key: password?
+  model: list(gpt-4o|gpt-4.1|gpt-4.1-mini|gpt-4-turbo|o4-mini|gemini-2.5-pro-preview-05-06|gemini-2.5-flash-preview-04-17|gemini-2.0-flash|gemini-1.5-pro|gemini-1.5-flash|claude-sonnet-4-20250514|claude-3-5-sonnet-latest|claude-3-5-haiku-latest|claude-3-opus-latest|openai/gpt-4o|anthropic/claude-3.5-sonnet|google/gemini-2.0-flash-exp:free|meta-llama/llama-3.3-70b-instruct|llama3.3|qwen2.5-coder|deepseek-r1|mistral|custom)?
   log_level: list(debug|info|warning|error)
   system_prompt_file: str?
   temperature: str?

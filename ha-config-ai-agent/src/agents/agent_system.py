@@ -346,7 +346,8 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                 accumulated_tool_calls.append({
                                     "id": "",
                                     "type": "function",
-                                    "function": {"name": "", "arguments": ""}
+                                    "function": {"name": "", "arguments": ""},
+                                    "thought_signature": None  # For Gemini 3 compatibility
                                 })
 
                             current_tool_call = accumulated_tool_calls[index]
@@ -359,6 +360,13 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                     current_tool_call["function"]["name"] = tool_call_delta.function.name
                                 if tool_call_delta.function.arguments:
                                     current_tool_call["function"]["arguments"] += tool_call_delta.function.arguments
+                            
+                            # Capture thought_signature for Gemini 3 models (if present)
+                            # It may be on the tool_call_delta itself or on the function object
+                            if hasattr(tool_call_delta, 'thought_signature') and tool_call_delta.thought_signature:
+                                current_tool_call["thought_signature"] = tool_call_delta.thought_signature
+                            elif hasattr(tool_call_delta.function, 'thought_signature') and tool_call_delta.function.thought_signature:
+                                current_tool_call["thought_signature"] = tool_call_delta.function.thought_signature
 
                         # Announce tool calls to UI as soon as we know them (may have partial arguments)
                         if not tool_calls_announced and any(tc.get("function", {}).get("name") for tc in accumulated_tool_calls):
@@ -470,6 +478,12 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                         "tool_call_id": tool_call["id"],
                         "content": json.dumps(result)
                     }
+                    
+                    # Include thought_signature for Gemini 3 models (required for CoT continuation)
+                    if tool_call.get("thought_signature"):
+                        tool_message["thought_signature"] = tool_call["thought_signature"]
+                        logger.debug(f"[ITERATION {iteration}] Including thought_signature in tool response")
+                    
                     # Mark the last tool result for caching to preserve full context
                     if self.enable_cache_control and is_last_tool:
                         tool_message["cache_control"] = {"type": "ephemeral"}

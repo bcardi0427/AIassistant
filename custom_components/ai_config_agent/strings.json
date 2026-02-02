@@ -3,11 +3,18 @@
     "step": {
       "user": {
         "title": "AI Configuration Agent",
-        "description": "Set up your AI Configuration Agent to manage Home Assistant configuration files through natural language.",
+        "description": "Select your AI provider to get started.",
         "data": {
-          "api_key": "OpenAI API Key",
-          "api_url": "API URL",
-          "model": "Model Name",
+          "provider": "AI Provider"
+        }
+      },
+      "configure": {
+        "title": "Configure {provider}",
+        "description": "Enter your API credentials and select a model.",
+        "data": {
+          "api_url": "API URL (leave empty for default)",
+          "api_key": "API Key",
+          "model": "Model",
           "log_level": "Log Level",
           "temperature": "Temperature (optional)",
           "system_prompt_file": "System Prompt File (optional)",
@@ -29,14 +36,27 @@
       "init": {
         "title": "AI Configuration Agent Options",
         "data": {
+          "provider": "AI Provider",
           "api_url": "API URL",
-          "model": "Model Name",
+          "model": "Model",
           "log_level": "Log Level",
           "temperature": "Temperature (optional)",
           "system_prompt_file": "System Prompt File (optional)",
           "enable_cache_control": "Enable Cache Control",
           "usage_tracking": "Usage Tracking Method"
         }
+      }
+    }
+  },
+  "selector": {
+    "provider": {
+      "options": {
+        "openai": "OpenAI",
+        "gemini": "Google Gemini",
+        "anthropic": "Anthropic (Claude)",
+        "openrouter": "OpenRouter",
+        "ollama": "Ollama (Local)",
+        "custom": "Custom Provider"
       }
     }
   }
