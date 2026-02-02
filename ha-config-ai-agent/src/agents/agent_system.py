@@ -804,12 +804,20 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                     else:
                         result = {"success": False, "error": f"Unknown tool: {function_name}"}
                     
-                    # Add tool response
+                    # Add tool response - CRITICAL: include thought_signature for Gemini 3+
                     tool_message = {
                         "role": "tool",
                         "tool_call_id": tool_call["id"],
+                        "function_name": function_name,  # Needed for Gemini format
                         "content": json.dumps(result)
                     }
+                    
+                    # Pass through thought_signature if present (required for Gemini 3+)
+                    thought_sig = tool_call.get("thought_signature")
+                    if thought_sig:
+                        tool_message["thought_signature"] = thought_sig
+                        logger.debug(f"[GEMINI] Passing thought_signature for {function_name}")
+                    
                     messages.append(tool_message)
                     new_messages.append(tool_message)
                     
