@@ -91,11 +91,11 @@ class GeminiClient:
                     }
                 }
                 
-                # Echo thought_signature if it was provided
+                # Echo thoughtSignature if it was provided
                 # Note: For parallel calls, it's usually only on the first part
-                thought_sig = tc.get("thought_signature")
+                thought_sig = tc.get("thought_signature") or tc.get("thoughtSignature")
                 if thought_sig:
-                    fc_part["functionCall"]["thought_signature"] = thought_sig
+                    fc_part["functionCall"]["thoughtSignature"] = thought_sig
                 
                 parts.append(fc_part)
 
@@ -112,12 +112,20 @@ class GeminiClient:
             except json.JSONDecodeError:
                 response_data = {"result": content_str}
             
-            parts.append({
+            # CRITICAL: Echo back the thoughtSignature
+            fr_part = {
                 "functionResponse": {
                     "name": func_name,
                     "response": response_data
                 }
-            })
+            }
+            
+            thought_sig = msg.get("thought_signature") or msg.get("thoughtSignature")
+            if thought_sig:
+                fr_part["functionResponse"]["thoughtSignature"] = thought_sig
+                logger.debug(f"[GEMINI] Echoing thoughtSignature for {func_name}")
+            
+            parts.append(fr_part)
 
         return parts
 
@@ -196,8 +204,8 @@ class GeminiClient:
                                 content_obj = candidate.get("content", {})
                                 for part in content_obj.get("parts", []):
                                     # Capture signatures from ANY part
-                                    # Support both variants: thought_signature and thoughtSignature
-                                    sig = part.get("thought_signature") or part.get("thoughtSignature")
+                                    # Gemini uses 'thoughtSignature' (camelCase) in native API
+                                    sig = part.get("thoughtSignature") or part.get("thought_signature")
                                     
                                     if "text" in part:
                                         if sig: msg_thought_sig = sig
