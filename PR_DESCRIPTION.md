@@ -66,4 +66,4 @@ The Agent can now "see" and "test" your Home Assistant instance directly:
 
 ---
 
-**Version:** 0.7.0
+**Version:** 0.7.1

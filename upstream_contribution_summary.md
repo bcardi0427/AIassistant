@@ -47,4 +47,4 @@ We have added native Git tools to the agent to provide a professional DevOps-sty
 *   **git_rollback**: A high-confidence recovery tool that can instantly revert the entire config directory to the last known working state if a reload fails or errors are detected in the logs.
 
 ---
-**Current Version:** 0.7.0
+**Current Version:** 0.7.1
