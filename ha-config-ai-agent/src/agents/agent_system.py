@@ -566,24 +566,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 "data": json.dumps({"error": str(e)})
             }
 
-                "event": "complete",
-                "data": json.dumps({
-                    "messages": new_messages,
-                    "iterations": iteration,
-                    "usage": {
-                        "input_tokens": total_input_tokens,
-                        "output_tokens": total_output_tokens,
-                        "total_tokens": total_input_tokens + total_output_tokens
-                    }
-                })
-            }
-            
-        except Exception as e:
-            logger.error(f"[GEMINI] Streaming error: {e}", exc_info=True)
-            yield {
-                "event": "error",
-                "data": json.dumps({"error": str(e)})
-            }
+
 
     def store_changeset(self, changeset_data: Dict[str, Any]) -> str:
         """
