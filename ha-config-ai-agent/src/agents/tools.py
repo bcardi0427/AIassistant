@@ -1001,6 +1001,14 @@ class AgentTools:
             message: Descriptive commit message (e.g., "Add morning routine automation")
         """
         try:
+            # Enrich message with system version if possible
+            try:
+                sys_info = await self.get_system_info()
+                if isinstance(sys_info, dict) and "version" in sys_info:
+                    message = f"{message}\n\n[HA Version: {sys_info['version']}]"
+            except Exception:
+                pass # Fallback to original message if sys_info fails
+
             # Set git if not configured (best effort)
             await asyncio.create_subprocess_exec(
                 "git", "config", "user.name", "AI Config Agent",
@@ -1037,7 +1045,7 @@ class AgentTools:
 
             return {
                 "success": True,
-                "message": f"Successfully committed changes: {message}",
+                "message": f"Successfully committed changes (Environment: HA {sys_info.get('version', 'Unknown')})",
                 "output": stdout.decode().strip()
             }
         except Exception as e:

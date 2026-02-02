@@ -52,4 +52,4 @@ Giving the agent "awareness" of its surroundings to prevent out-of-date or incom
 *   **get_system_info**: Retrieves Core version, integrations, and units. This ensures the AI doesn't hallucinate features that were deprecated in your version of HA or suggest services for integrations you haven't installed yet.
 
 ---
-**Current Version:** 0.8.0
+**Current Version:** 0.8.1
