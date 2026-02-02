@@ -62,16 +62,18 @@ class GeminiClient:
         if content:
             if isinstance(content, str):
                 part = {"text": content}
-                # Preserve thought_signature for text parts if present
-                if msg.get("thought_signature"):
-                    part["thought_signature"] = msg["thought_signature"]
+                # Preserve thoughtSignature for text parts (sibling)
+                thought_sig = msg.get("thought_signature") or msg.get("thoughtSignature")
+                if thought_sig:
+                    part["thoughtSignature"] = thought_sig
                 parts.append(part)
             elif isinstance(content, list):
                 for item in content:
                     if isinstance(item, dict) and item.get("type") == "text":
                         part = {"text": item.get("text", "")}
-                        if msg.get("thought_signature"): # Attach to first text part
-                             part["thought_signature"] = msg["thought_signature"]
+                        thought_sig = msg.get("thought_signature") or msg.get("thoughtSignature")
+                        if thought_sig:
+                             part["thoughtSignature"] = thought_sig
                         parts.append(part)
 
         # 2. Handle Function Calls (Assistant Role)
@@ -91,11 +93,10 @@ class GeminiClient:
                     }
                 }
                 
-                # Echo thoughtSignature if it was provided
-                # Note: For parallel calls, it's usually only on the first part
+                # Echo thoughtSignature as a SIBLING to functionCall (required)
                 thought_sig = tc.get("thought_signature") or tc.get("thoughtSignature")
                 if thought_sig:
-                    fc_part["functionCall"]["thoughtSignature"] = thought_sig
+                    fc_part["thoughtSignature"] = thought_sig
                 
                 parts.append(fc_part)
 
@@ -112,20 +113,13 @@ class GeminiClient:
             except json.JSONDecodeError:
                 response_data = {"result": content_str}
             
-            # CRITICAL: Echo back the thoughtSignature
-            fr_part = {
+            # Use standard functionResponse structure
+            parts.append({
                 "functionResponse": {
                     "name": func_name,
                     "response": response_data
                 }
-            }
-            
-            thought_sig = msg.get("thought_signature") or msg.get("thoughtSignature")
-            if thought_sig:
-                fr_part["functionResponse"]["thoughtSignature"] = thought_sig
-                logger.debug(f"[GEMINI] Echoing thoughtSignature for {func_name}")
-            
-            parts.append(fr_part)
+            })
 
         return parts
 
