@@ -89,10 +89,36 @@ class AgentSystem:
 
         # System prompt for the configuration agent
         self.system_prompt = system_prompt or self._get_default_system_prompt()
+
+        # Context Injection: Load HA_CONTEXT.md if it exists
+        context_content = self._load_context_file()
+        if context_content:
+            logger.info(f"Injecting {len(context_content)} chars of context from HA_CONTEXT.md")
+            self.system_prompt += f"\n\n{context_content}"
+
         if system_prompt:
             logger.info(f"Using custom system prompt ({len(system_prompt)} characters)")
         else:
             logger.info("Using default system prompt")
+
+    def _load_context_file(self) -> Optional[str]:
+        """Load the HA_CONTEXT.md file from the project root if it exists."""
+        try:
+            # Look for HA_CONTEXT.md in the project root
+            # Current file is in src/agents/agent_system.py
+            # Root is 3 levels up: src/agents -> src -> ha-config-ai-agent -> Root
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            root_dir = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
+            
+            context_path = os.path.join(root_dir, 'HA_CONTEXT.md')
+            
+            if os.path.exists(context_path):
+                with open(context_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            return None
+        except Exception as e:
+            logger.warning(f"Failed to load context file: {e}")
+            return None
 
     def _get_default_system_prompt(self) -> str:
         """Get the default system prompt for the configuration agent."""
