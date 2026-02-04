@@ -390,17 +390,19 @@ async def _register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Register WebSocket route
     hass.http.app.router.add_get('/api/ai_config_agent/ws/{path:.*}', websocket_proxy)
 
-    # Register iframe panel that points to our proxy
-    from homeassistant.components.frontend import async_register_built_in_panel
+    # Register native custom panel
+    from homeassistant.components import panel_custom
 
-    async_register_built_in_panel(
+    # The Custom Panel API handles loading the module_url automatically
+    await panel_custom.async_register_panel(
         hass,
-        component_name="iframe",
+        webcomponent_name="ha-config-agent-panel",
+        frontend_url_path="ai_config_agent",
+        module_url="/api/ai_config_agent/static/panel.js",
         sidebar_title="Config Agent",
         sidebar_icon="mdi:robot-outline",
-        frontend_url_path="ai_config_agent",
-        config={"url": "/api/ai_config_agent/"},
-        require_admin=True
+        require_admin=True,
+        config={"server_url": "/api/ai_config_agent/"}
     )
 
 
