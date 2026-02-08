@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Configuration Agent (v{{ version }})</title>
-    <!-- Cache Buster: v0.9.4 -->
-    <link rel="stylesheet" href="static/css/styles-v0.9.5.css">
+    <!-- Cache Buster: v{{ version }} -->
+    <link rel="stylesheet" href="static/css/styles-v0.9.5.css?v={{ version }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html@3.4.47/bundles/css/diff2html.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/diff@5.1.0/dist/diff.min.js"></script>
@@ -85,8 +85,8 @@
         </footer>
     </div>
 
-    <script src="static/js/websocket-chat.js"></script>
-    <script src="static/js/app.js"></script>
+    <script src="static/js/websocket-chat.js?v={{ version }}"></script>
+    <script src="static/js/app.js?v={{ version }}"></script>
     <script>
         // Use WebSocket instead of SSE to avoid Ingress buffering
         // Override the sendMessage function
