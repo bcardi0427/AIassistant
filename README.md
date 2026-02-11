@@ -103,6 +103,10 @@ If you're using Gemini 3 models (like `gemini-3-flash-preview`) and encounter a 
 ## Custom Models
 If your model isn't in the dropdown, select "custom" from the model list and enter your model name in the API URL field, or use the options flow to enter a custom model name after initial setup.
 
+# Credits
+
+This project is a fork of [ha-config-ai-agent](https://github.com/yinzara/ha-config-ai-agent) by @yinzara, renamed for personal distribution and custom features.
+
 # License
 
 MIT License - See [LICENSE](LICENSE) file for details.
