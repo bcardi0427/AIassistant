@@ -50,7 +50,7 @@ async def lifespan(_: FastAPI):
     """Initialize application on startup."""
     global config_manager, agent_system
 
-    logger.info("=== AI Configuration Agent Starting ===")
+    logger.info("=== AIassistant Starting ===")
     logger.info(f"OpenAI API URL: {os.getenv('OPENAI_API_URL', 'Not configured')}")
     logger.info(f"OpenAI Model: {os.getenv('OPENAI_MODEL', 'Not configured')}")
     logger.info(f"HA Config Dir: {os.getenv('HA_CONFIG_DIR', 'Not configured')}")
@@ -118,11 +118,11 @@ async def lifespan(_: FastAPI):
     yield
 
     # Shutdown
-    logger.info("=== AI Configuration Agent Shutting Down ===")
+    logger.info("=== AIassistant Shutting Down ===")
 
 # Initialize FastAPI application with lifespan
 app = FastAPI(
-    title="AI Configuration Agent",
+    title="AIassistant",
     description="AI-powered Home Assistant configuration management",
     version=version,
     lifespan=lifespan

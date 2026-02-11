@@ -119,11 +119,11 @@ async def lifespan(_: FastAPI):
     yield
 
     # Shutdown
-    logger.info("=== AI Configuration Agent Shutting Down ===")
+    logger.info("=== AIassistant Shutting Down ===")
 
 # Initialize FastAPI application with lifespan
 app = FastAPI(
-    title="AI Configuration Agent",
+    title="AIassistant",
     description="AI-powered Home Assistant configuration management",
     version=version,
     lifespan=lifespan

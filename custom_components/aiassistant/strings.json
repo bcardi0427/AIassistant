@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "AI Configuration Agent",
+        "title": "AIassistant",
         "description": "Select your AI provider to get started.",
         "data": {
           "provider": "AI Provider"
@@ -34,13 +34,13 @@
       "unknown": "An unexpected error occurred."
     },
     "abort": {
-      "already_configured": "AI Configuration Agent is already configured."
+      "already_configured": "AIassistant is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "AI Configuration Agent Options",
+        "title": "AIassistant Options",
         "description": "Models available: {models_count}",
         "data": {
           "provider": "AI Provider",

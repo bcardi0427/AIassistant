@@ -36,7 +36,7 @@ PLATFORMS: list[Platform] = []
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the AI Configuration Agent component."""
+    """Set up the AIassistant component."""
     hass.data.setdefault(DOMAIN, {})
     return True
 

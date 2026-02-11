@@ -116,7 +116,7 @@ async function checkHealth() {
         if (!data.agent_system_ready) {
             addSystemMessage('⚠️ AI system not ready. Please configure OPENAI_API_KEY.');
         } else {
-            addSystemMessage('✅ AI Configuration Agent ready. How can I help you today?');
+            addSystemMessage('✅ AIassistant ready. How can I help you today?');
         }
     } catch (error) {
         console.error('Health check failed:', error);
