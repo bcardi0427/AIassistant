@@ -1,4 +1,4 @@
-class AiConfigAgentPanel extends HTMLElement {
+class AiAssistantPanel extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -18,7 +18,7 @@ class AiConfigAgentPanel extends HTMLElement {
 
     _connectWebSocket() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/api/ai_config_agent/ws/chat`;
+        const wsUrl = `${protocol}//${window.location.host}/api/aiassistant/ws/chat`;
 
         this._ws = new WebSocket(wsUrl);
 
@@ -83,7 +83,7 @@ class AiConfigAgentPanel extends HTMLElement {
             const buttons = cardElement.querySelectorAll('button');
             buttons.forEach(b => b.disabled = true);
 
-            const response = await fetch('/api/ai_config_agent/api/approve', {
+            const response = await fetch('/api/aiassistant/api/approve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -152,7 +152,7 @@ class AiConfigAgentPanel extends HTMLElement {
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AI Agent Conversation Export</title>
+    <title>AIassistant Conversation Export</title>
     ${styles}
     <style>
         body { margin: 0; padding: 0; background: var(--primary-background-color); }
@@ -270,11 +270,11 @@ class AiConfigAgentPanel extends HTMLElement {
       </style>
       <div class="container">
         <header>
-            <span>AI Configuration Agent</span>
+            <span>AIassistant</span>
             <button id="export-btn" title="Download Conversation">💾 Save Chat</button>
         </header>
         <div id="chat-output">
-             <div class="message system">Connected to Home Assistant AI Agent v0.9.1</div>
+             <div class="message system">Connected to AIassistant v0.9.13</div>
         </div>
         <div id="input-area">
           <input type="text" id="chat-input" placeholder="Ask me to configure something..." autocomplete="off">
@@ -304,4 +304,4 @@ class AiConfigAgentPanel extends HTMLElement {
     }
 }
 
-customElements.define('ha-config-agent-panel', AiConfigAgentPanel);
+customElements.define('ha-config-agent-panel', AiAssistantPanel);

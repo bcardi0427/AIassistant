@@ -1,6 +1,6 @@
-// AI Configuration Agent - Main JavaScript
+// AIassistant - Main JavaScript
 
-console.log('AI Configuration Agent initializing...');
+console.log('AIassistant initializing...');
 
 // Global state
 let conversationHistory = [];

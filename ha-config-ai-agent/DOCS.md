@@ -1,4 +1,4 @@
-# AI Configuration Agent - Documentation
+# AIassistant - Documentation
 
 Complete guide for installing, configuring, and using the AI Configuration Agent add-on for Home Assistant.
 
@@ -33,7 +33,7 @@ Complete guide for installing, configuring, and using the AI Configuration Agent
 
 ### Manual Installation
 
-The AI Configuration Agent can be installed as a local Home Assistant add-on.
+The AIassistant can be installed as a local Home Assistant add-on.
 
 #### Prerequisites
 - Home Assistant OS or Supervised installation
@@ -65,7 +65,7 @@ The AI Configuration Agent can be installed as a local Home Assistant add-on.
 
 5. **Install the add-on**
    - Refresh the Add-on Store page
-   - Find "AI Configuration Agent" in the local add-ons section
+   - Find "AIassistant" in the local add-ons section
    - Click on it and press **Install**
    - Wait for the installation to complete
 
@@ -510,7 +510,7 @@ After installation and configuration:
    - Or go to the add-on page and click "Open Web UI"
 
 2. **Verify the connection**
-   - The interface should show: "✅ AI Configuration Agent ready"
+   - The interface should show: "✅ AIassistant ready"
    - If not, check your API key and logs
 
 3. **Start chatting**

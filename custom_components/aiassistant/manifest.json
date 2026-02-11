@@ -1,6 +1,6 @@
 {
-  "domain": "ai_config_agent",
-  "name": "AI Configuration Agent",
+  "domain": "aiassistant",
+  "name": "AIassistant",
   "codeowners": [
     "@yinzara"
   ],
@@ -19,5 +19,5 @@
     "openai==1.58.1",
     "ruamel.yaml==0.18.5"
   ],
-  "version": "0.9.13"
+  "version": "0.9.14"
 }

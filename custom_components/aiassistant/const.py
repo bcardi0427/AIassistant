@@ -1,6 +1,6 @@
-"""Constants for the AI Configuration Agent integration."""
+"""Constants for the AIassistant integration."""
 
-DOMAIN = "ai_config_agent"
+DOMAIN = "aiassistant"
 
 # Configuration constants
 CONF_API_KEY = "api_key"

@@ -13,7 +13,7 @@ import json as json_lib
 from .config import ConfigurationManager
 from .agents import AgentSystem
 
-version = "0.9.13"
+version = "0.9.14"
 
 # Configure logging
 log_level = os.getenv('LOG_LEVEL', 'info').upper()
@@ -51,7 +51,7 @@ async def lifespan(_: FastAPI):
     """Initialize application on startup."""
     global config_manager, agent_system
 
-    logger.info("=== AI Configuration Agent Starting ===")
+    logger.info("=== AIassistant Starting ===")
     logger.info(f"OpenAI API URL: {os.getenv('OPENAI_API_URL', 'Not configured')}")
     logger.info(f"OpenAI Model: {os.getenv('OPENAI_MODEL', 'Not configured')}")
     logger.info(f"HA Config Dir: {os.getenv('HA_CONFIG_DIR', 'Not configured')}")

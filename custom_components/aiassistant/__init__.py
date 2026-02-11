@@ -1,4 +1,4 @@
-"""AI Configuration Agent custom component for Home Assistant."""
+"""AIassistant custom component for Home Assistant."""
 from __future__ import annotations
 
 import logging
@@ -42,8 +42,8 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up AI Configuration Agent from a config entry."""
-    _LOGGER.info("Setting up AI Configuration Agent")
+    """Set up AIassistant from a config entry."""
+    _LOGGER.info("Setting up AIassistant")
 
     # Store configuration
     hass.data[DOMAIN][entry.entry_id] = {
@@ -250,8 +250,8 @@ async def _register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Proxy view for AI Config Agent."""
 
         requires_auth = False  # Auth handled by panel iframe
-        url = "/api/ai_config_agent/{path:.*}"
-        name = "api:ai_config_agent"
+        url = "/api/aiassistant/{path:.*}"
+        name = "api:aiassistant"
 
         async def get(self, request, path=""):
             """Proxy GET requests."""
@@ -388,7 +388,7 @@ async def _register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
         return ws_server
 
     # Register WebSocket route
-    hass.http.app.router.add_get('/api/ai_config_agent/ws/{path:.*}', websocket_proxy)
+    hass.http.app.router.add_get('/api/aiassistant/ws/{path:.*}', websocket_proxy)
 
     # Register native custom panel
     from homeassistant.components import panel_custom
@@ -397,12 +397,12 @@ async def _register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name="ha-config-agent-panel",
-        frontend_url_path="ai_config_agent",
-        module_url="/api/ai_config_agent/static/panel.js",
-        sidebar_title="Config Agent",
+        frontend_url_path="aiassistant",
+        module_url="/api/aiassistant/static/panel.js",
+        sidebar_title="AIassistant",
         sidebar_icon="mdi:robot-outline",
         require_admin=True,
-        config={"server_url": "/api/ai_config_agent/"}
+        config={"server_url": "/api/aiassistant/"}
     )
 
 
@@ -432,7 +432,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Remove panel
     from homeassistant.components.frontend import async_remove_panel
-    async_remove_panel(hass, "ai_config_agent")
+    async_remove_panel(hass, "aiassistant")
 
     # Clean up stored data
     hass.data[DOMAIN].pop(entry.entry_id)

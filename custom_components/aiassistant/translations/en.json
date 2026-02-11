@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "AI Configuration Agent",
-        "description": "Set up your AI Configuration Agent to manage Home Assistant configuration files through natural language.",
+        "title": "AIassistant",
+        "description": "Set up your AIassistant to manage Home Assistant configuration files through natural language.",
         "data": {
           "api_key": "OpenAI API Key",
           "api_url": "API URL",
@@ -21,13 +21,13 @@
       "unknown": "An unexpected error occurred."
     },
     "abort": {
-      "already_configured": "AI Configuration Agent is already configured."
+      "already_configured": "AIassistant is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "AI Configuration Agent Options",
+        "title": "AIassistant Options",
         "data": {
           "api_url": "API URL",
           "model": "Model Name",

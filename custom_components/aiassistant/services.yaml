@@ -1,8 +1,8 @@
-# Services for AI Configuration Agent
+# Services for AIassistant
 
 chat:
-  name: Chat with AI Agent
-  description: Send a message to the AI Configuration Agent and receive a response.
+  name: Chat with AIassistant
+  description: Send a message to the AIassistant and receive a response.
   fields:
     message:
       name: Message

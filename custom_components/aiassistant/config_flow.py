@@ -1,4 +1,4 @@
-"""Config flow for AI Configuration Agent integration."""
+"""Config flow for AIassistant integration."""
 from __future__ import annotations
 
 import logging
@@ -166,11 +166,11 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         _LOGGER.error("Failed to validate API connection: %s", err)
         raise ValueError(f"Cannot connect to API: {err}")
 
-    return {"title": "AI Configuration Agent"}
+    return {"title": "AIassistant"}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for AI Configuration Agent."""
+    """Handle a config flow for AIassistant."""
 
     VERSION = 2
 
@@ -278,7 +278,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 # Check if already configured
-                await self.async_set_unique_id("ai_config_agent")
+                await self.async_set_unique_id("aiassistant")
                 self._abort_if_unique_id_configured()
 
                 return self.async_create_entry(title=info["title"], data=self._data)
@@ -352,7 +352,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle options flow for AI Configuration Agent."""
+    """Handle options flow for AIassistant."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""

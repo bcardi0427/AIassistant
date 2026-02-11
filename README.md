@@ -1,4 +1,4 @@
-# AI Configuration Agent for Home Assistant
+# AIassistant for Home Assistant
 
 An AI-powered Home Assistant configuration assistant with approval workflow.
 
@@ -30,13 +30,13 @@ An AI-powered Home Assistant configuration assistant with approval workflow.
    - Category: Integration
 
 2. **Install:**
-   - Search for "AI Configuration Agent"
+   - Search for "AIassistant"
    - Click Download
    - Restart Home Assistant
 
 3. **Configure:**
    - Settings → Devices & Services → Add Integration
-   - Search "AI Configuration Agent"
+   - Search "AIassistant"
    - **Step 1:** Select your AI provider (OpenAI, Gemini, Anthropic, etc.)
    - **Step 2:** Enter your API key and select a model
 
@@ -45,7 +45,7 @@ An AI-powered Home Assistant configuration assistant with approval workflow.
 1. Navigate to Settings → Add-ons → Add-on Store
 2. Click ⋮ → Repositories
 3. Add: `https://github.com/yinzara/ha-config-ai-agent`
-4. Find "AI Configuration Agent" and click Install
+4. Find "AIassistant" and click Install
 5. Configure:
    - **Provider:** Select your AI provider
    - **API Key:** Enter your API key
