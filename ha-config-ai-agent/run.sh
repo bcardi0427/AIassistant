@@ -62,7 +62,7 @@ export BACKUP_DIR="/backup/config-agent"
 mkdir -p "${BACKUP_DIR}"
 
 # Log startup
-bashio::log.info "Starting AI Configuration Agent..."
+bashio::log.info "Starting AIassistant..."
 bashio::log.info "Provider: ${PROVIDER}"
 bashio::log.info "API URL: ${OPENAI_API_URL}"
 bashio::log.info "Model: ${OPENAI_MODEL}"

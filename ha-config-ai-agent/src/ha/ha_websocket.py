@@ -115,9 +115,12 @@ class HomeAssistantWebSocket:
                 else:
                     raise Exception(f"Unexpected response type: {response.get('type')}")
 
-    async def get_lovelace_config(self) -> Dict[str, Any]:
+    async def get_lovelace_config(self, url_path: Optional[str] = None) -> Dict[str, Any]:
         """
         Retrieve Lovelace UI configuration.
+
+        Args:
+            url_path: Optional URL path for custom dashboards. If None, default is used.
 
         Returns:
             Lovelace configuration as dictionary
@@ -125,29 +128,36 @@ class HomeAssistantWebSocket:
         Raises:
             Exception: If retrieval fails
         """
-        logger.info("Retrieving Lovelace configuration via WebSocket")
+        logger.info(f"Retrieving Lovelace configuration via WebSocket (path: {url_path or 'default'})")
         try:
-            config = await self.call("lovelace/config", force=False)
-            logger.info("Successfully retrieved Lovelace configuration")
+            params = {"force": False}
+            if url_path:
+                params["url_path"] = url_path
+            config = await self.call("lovelace/config", **params)
+            logger.info(f"Successfully retrieved Lovelace configuration for {url_path or 'default'}")
             return config
         except Exception as e:
             logger.error(f"Failed to retrieve Lovelace config: {e}")
             raise
 
-    async def save_lovelace_config(self, config: Dict[str, Any]) -> None:
+    async def save_lovelace_config(self, config: Dict[str, Any], url_path: Optional[str] = None) -> None:
         """
         Save Lovelace UI configuration.
 
         Args:
             config: Lovelace configuration dictionary
+            url_path: Optional URL path for custom dashboards. If None, default is used.
 
         Raises:
             Exception: If save fails
         """
-        logger.info("Saving Lovelace configuration via WebSocket")
+        logger.info(f"Saving Lovelace configuration via WebSocket (path: {url_path or 'default'})")
         try:
-            await self.call("lovelace/config/save", config=config)
-            logger.info("Successfully saved Lovelace configuration")
+            params = {"config": config}
+            if url_path:
+                params["url_path"] = url_path
+            await self.call("lovelace/config/save", **params)
+            logger.info(f"Successfully saved Lovelace configuration for {url_path or 'default'}")
         except Exception as e:
             logger.error(f"Failed to save Lovelace config: {e}")
             raise
@@ -487,15 +497,125 @@ class HomeAssistantWebSocket:
             logger.error(f"Failed to retrieve system config: {e}")
             raise
 
+    async def list_dashboards(self) -> List[Dict[str, Any]]:
+        """
+        Get list of all Lovelace dashboards.
+
+        Returns:
+            List of dashboard dictionaries
+        """
+        logger.info("Retrieving Lovelace dashboards via WebSocket")
+        try:
+            result = await self.call("lovelace/dashboards")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to retrieve dashboards: {e}")
+            raise
+
+    async def create_dashboard(
+        self,
+        url_path: str,
+        title: str,
+        icon: Optional[str] = None,
+        require_admin: bool = False,
+        show_in_sidebar: bool = True,
+        mode: str = "storage"
+    ) -> Dict[str, Any]:
+        """
+        Create a new Lovelace dashboard.
+
+        Args:
+            url_path: URL identifier for the dashboard (must be unique)
+            title: Display title
+            icon: Optional icon
+            require_admin: Whether admin rights are required
+            show_in_sidebar: Whether to show in HA sidebar
+            mode: Configuration mode (always storage for this client)
+
+        Returns:
+            Created dashboard information
+        """
+        logger.info(f"Creating new Lovelace dashboard: {url_path} ({title})")
+        try:
+            params = {
+                "url_path": url_path,
+                "title": title,
+                "icon": icon,
+                "require_admin": require_admin,
+                "show_in_sidebar": show_in_sidebar,
+                "mode": mode
+            }
+            return await self.call("lovelace/dashboards/create", **params)
+        except Exception as e:
+            logger.error(f"Failed to create dashboard: {e}")
+            raise
+
+    async def update_dashboard(
+        self,
+        id: str,
+        url_path: Optional[str] = None,
+        title: Optional[str] = None,
+        icon: Optional[str] = None,
+        require_admin: Optional[bool] = None,
+        show_in_sidebar: Optional[bool] = None
+    ) -> Dict[str, Any]:
+        """
+        Update an existing Lovelace dashboard.
+
+        Args:
+            id: Internal ID of the dashboard to update
+            url_path: New URL path (optional)
+            title: New title (optional)
+            icon: New icon (optional)
+            require_admin: Update admin requirement (optional)
+            show_in_sidebar: Update sidebar visibility (optional)
+
+        Returns:
+            Updated dashboard information
+        """
+        logger.info(f"Updating Lovelace dashboard ID: {id}")
+        try:
+            params = {"id": id}
+            if url_path is not None:
+                params["url_path"] = url_path
+            if title is not None:
+                params["title"] = title
+            if icon is not None:
+                params["icon"] = icon
+            if require_admin is not None:
+                params["require_admin"] = require_admin
+            if show_in_sidebar is not None:
+                params["show_in_sidebar"] = show_in_sidebar
+
+            return await self.call("lovelace/dashboards/update", **params)
+        except Exception as e:
+            logger.error(f"Failed to update dashboard: {e}")
+            raise
+
+    async def delete_dashboard(self, id: str) -> None:
+        """
+        Delete a Lovelace dashboard.
+
+        Args:
+            id: Internal ID of the dashboard to delete
+        """
+        logger.info(f"Deleting Lovelace dashboard ID: {id}")
+        try:
+            await self.call("lovelace/dashboards/delete", id=id)
+        except Exception as e:
+            logger.error(f"Failed to delete dashboard: {e}")
+            raise
 
 
-async def get_lovelace_config_as_yaml(url: str, token: str) -> Optional[str]:
+
+async def get_lovelace_config_as_yaml(url: str, token: str, url_path: Optional[str] = None) -> Optional[str]:
     """
     Helper function to retrieve Lovelace config as YAML string.
 
     Args:
         url: WebSocket URL
         token: Access token
+        url_path: Optional URL path for custom dashboards
 
     Returns:
         YAML string of Lovelace config, or None if retrieval fails
@@ -503,7 +623,7 @@ async def get_lovelace_config_as_yaml(url: str, token: str) -> Optional[str]:
     ws_client = HomeAssistantWebSocket(url, token)
     try:
         await ws_client.connect()
-        config = await ws_client.get_lovelace_config()
+        config = await ws_client.get_lovelace_config(url_path=url_path)
 
         # Convert to YAML string
         from ruamel.yaml import YAML
@@ -525,7 +645,7 @@ async def get_lovelace_config_as_yaml(url: str, token: str) -> Optional[str]:
         await ws_client.close()
 
 
-async def save_lovelace_config_from_yaml(url: str, token: str, yaml_content: str) -> None:
+async def save_lovelace_config_from_yaml(url: str, token: str, yaml_content: str, url_path: Optional[str] = None) -> None:
     """
     Helper function to save Lovelace config from YAML string.
 
@@ -533,6 +653,7 @@ async def save_lovelace_config_from_yaml(url: str, token: str, yaml_content: str
         url: WebSocket URL
         token: Access token
         yaml_content: YAML string to parse and save
+        url_path: Optional URL path for custom dashboards
 
     Raises:
         Exception: If save fails
@@ -548,7 +669,7 @@ async def save_lovelace_config_from_yaml(url: str, token: str, yaml_content: str
         yaml = YAML()
         config = yaml.load(StringIO(yaml_content))
 
-        await ws_client.save_lovelace_config(config)
+        await ws_client.save_lovelace_config(config, url_path=url_path)
 
     finally:
         await ws_client.close()

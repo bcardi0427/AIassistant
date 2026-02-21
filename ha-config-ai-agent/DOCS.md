@@ -1,6 +1,6 @@
 # AIassistant - Documentation
 
-Complete guide for installing, configuring, and using the AI Configuration Agent add-on for Home Assistant.
+Complete guide for installing, configuring, and using the AIassistant add-on for Home Assistant.
 
 ## Table of Contents
 
@@ -36,6 +36,7 @@ Complete guide for installing, configuring, and using the AI Configuration Agent
 The AIassistant can be installed as a local Home Assistant add-on.
 
 #### Prerequisites
+
 - Home Assistant OS or Supervised installation
 - Access to the Home Assistant file system
 - An OpenAI API key (or compatible provider)
@@ -46,17 +47,21 @@ The AIassistant can be installed as a local Home Assistant add-on.
    - Via SSH, Samba share, or Terminal add-on
 
 2. **Create the addons directory** (if it doesn't exist)
+
    ```bash
+
    mkdir -p /config/addons
    cd /config/addons
    ```
 
 3. **Clone the repository**
+
    ```bash
    git clone https://github.com/bcardi0427/AIassistant.git
    ```
 
 4. **Add the local repository in Home Assistant**
+
    - Navigate to **Settings** → **Add-ons** → **Add-on Store**
    - Click the menu icon (⋮) in the top right
    - Select **Repositories**
@@ -78,7 +83,7 @@ The AIassistant can be installed as a local Home Assistant add-on.
 
 8. **Access the interface**
    - Click **Open Web UI** or
-   - Find "Config Agent" in your Home Assistant sidebar
+   - Find "AIassistant" in your Home Assistant sidebar
 
 ### Local Development
 
@@ -111,7 +116,7 @@ export LOG_LEVEL="debug"
 uvicorn src.main:app --reload --port 8099
 ```
 
-Visit http://localhost:8099 to access the interface.
+Visit <http://localhost:8099> to access the interface.
 
 ---
 
@@ -146,7 +151,7 @@ usage_tracking: "stream_options"
 #### Configuration Parameters
 
 | Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| :--- | :--- | :--- | :--- |
 | `provider` | List | `gemini` | AI provider: `openai`, `gemini`, `anthropic`, `openrouter`, `ollama`, `custom` |
 | `api_url` | URL | Auto-detected | API endpoint URL. Leave empty to auto-detect based on provider |
 | `api_key` | Password | *Required* | API authentication key (not required for Ollama) |
@@ -162,7 +167,7 @@ usage_tracking: "stream_options"
 When you select a provider, the API URL is automatically configured:
 
 | Provider | Auto-configured URL |
-|----------|---------------------|
+| :--- | :--- |
 | `openai` | `https://api.openai.com/v1` |
 | `gemini` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
 | `anthropic` | `https://api.anthropic.com/v1` |
@@ -178,9 +183,10 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
 
 **Best for:** Fast responses, cost-effective, high quality
 
-1. Sign up at https://aistudio.google.com/
+1. Sign up at <https://aistudio.google.com/>
 2. Create an API key
 3. Configure:
+
    ```yaml
    provider: "gemini"
    api_key: "your-google-api-key"
@@ -188,6 +194,7 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
    ```
 
 **Available models in dropdown:**
+
 - `gemini-2.5-pro-preview-05-06` - Latest, highest quality
 - `gemini-2.5-flash-preview-04-17` - Fast and capable
 - `gemini-2.0-flash` - Default, great balance
@@ -198,9 +205,10 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
 
 **Best for:** Production use, proven reliability
 
-1. Sign up at https://platform.openai.com/
+1. Sign up at <https://platform.openai.com/>
 2. Create an API key
 3. Configure:
+
    ```yaml
    provider: "openai"
    api_key: "sk-proj-your-key-here"
@@ -208,6 +216,7 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
    ```
 
 **Available models in dropdown:**
+
 - `gpt-4o` - Best balance of speed and quality
 - `gpt-4.1` - Latest GPT-4 variant
 - `gpt-4.1-mini` - Faster, lower cost
@@ -218,9 +227,10 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
 
 **Best for:** Access to multiple models, competitive pricing
 
-1. Sign up at https://openrouter.ai/
+1. Sign up at <https://openrouter.ai/>
 2. Create an API key
 3. Configure:
+
    ```yaml
    provider: "openrouter"
    api_key: "sk-or-v1-your-key"
@@ -228,6 +238,7 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
    ```
 
 **Available models in dropdown:**
+
 - `openai/gpt-4o`
 - `anthropic/claude-3.5-sonnet`
 - `google/gemini-2.0-flash-exp:free`
@@ -237,9 +248,10 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
 
 **Best for:** Advanced reasoning, long context
 
-1. Sign up at https://console.anthropic.com/
+1. Sign up at <https://console.anthropic.com/>
 2. Create an API key
 3. Configure:
+
    ```yaml
    provider: "anthropic"
    api_key: "sk-ant-your-key"
@@ -249,23 +261,28 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
    ```
 
 **Available models in dropdown:**
+
 - `claude-sonnet-4-20250514` - Latest Sonnet
 - `claude-3-5-sonnet-latest` - Excellent reasoning
 - `claude-3-5-haiku-latest` - Fast and efficient
 - `claude-3-opus-latest` - Most capable
 
-
 #### Ollama (Local)
 
 **Best for:** Privacy, offline use, no API costs
 
-1. Install Ollama: https://ollama.ai/
+1. Install Ollama: <https://ollama.ai/>
+
 2. Pull a model:
+
    ```bash
    ollama pull llama3.3
    ```
+
 3. Ensure Ollama is accessible from Home Assistant
+
 4. Configure:
+
    ```yaml
    provider: "ollama"
    api_key: ""  # Not required for Ollama
@@ -275,6 +292,7 @@ The add-on supports multiple AI providers with easy dropdown selection. Simply s
    ```
 
 **Available models in dropdown:**
+
 - `llama3.3` - Good general performance
 - `qwen2.5-coder` - Optimized for code
 - `deepseek-r1` - Strong reasoning
@@ -300,6 +318,7 @@ You can customize the AI agent's behavior by providing a custom system prompt fi
 #### Creating a Custom System Prompt
 
 1. **Create a prompt file** in your Home Assistant `/config` directory:
+
    ```bash
    # Example: Create a file at /config/ai_agent_prompt.txt
    nano /config/ai_agent_prompt.txt
@@ -307,51 +326,53 @@ You can customize the AI agent's behavior by providing a custom system prompt fi
 
 2. **Write your custom instructions**. Start with the default prompt and modify as needed:
 
-<details>
-<summary><b>Default System Prompt (Click to expand)</b></summary>
+   **Default System Prompt:**
 
-```text
-You are a Home Assistant Configuration Assistant.
+   ```text
 
-Your role is to help users manage their Home Assistant configuration files safely and effectively.
+   You are a Home Assistant Configuration Assistant.
 
-Key Responsibilities:
-1. **Understanding Requests**: Interpret user requests about Home Assistant configuration
-2. **Reading Configuration**: Use tools to examine current configuration files
-3. **Proposing Changes**: Suggest configuration changes with clear explanations using the propose_config_changes tool without requesting confirmation
-4. **Safety First**: Always explain the impact of changes before proposing them
-5. **Best Practices**: Guide users toward Home Assistant best practices
+   
+   Your role is to help users manage their Home Assistant configuration files safely and effectively.
+   
+   Key Responsibilities:
+   1. **Understanding Requests**: Interpret user requests about Home Assistant configuration
+   2. **Reading Configuration**: Use tools to examine current configuration files
+   3. **Proposing Changes**: Suggest configuration changes with clear explanations using the propose_config_changes tool without requesting confirmation
+   4. **Safety First**: Always explain the impact of changes before proposing them
+   5. **Best Practices**: Guide users toward Home Assistant best practices
+   
+   Available Tools:
+   - search_config_files: Search for terms in configuration (use first)
+   - propose_config_changes: Propose changes for user approval
+   
+   Important Guidelines:
+   - NEVER suggest changes directly - always use propose_config_change
+   - Explain your reasoning in your response when calling propose_config_changes
+   - The user can accept or reject your proposed config changes through their own UI
+   - Explain WHY you're proposing changes, not just WHAT
+   - Preserve all existing code, comments and structure when possible
+   - Only change what's needed to complete the request of the user
+   - Validate that changes align with Home Assistant documentation
+   - Warn users about potential breaking changes
+   - Suggest testing in a development environment for major changes
+   - Remember when searching for files that terms are case-insensitive so don't search for multiple case variations of a word
+   
+   Response Style:
+   - Be concise but thorough
+   - Use technical terms appropriately
+   - Provide examples when helpful
+   - Format code blocks with YAML syntax
+   - Ask clarifying questions if request is ambiguous
+   
+   Remember: You're helping manage a production Home Assistant system. Safety and clarity are paramount.
 
-Available Tools:
-- search_config_files: Search for terms in configuration (use first)
-- propose_config_changes: Propose changes for user approval
-
-Important Guidelines:
-- NEVER suggest changes directly - always use propose_config_change
-- Explain your reasoning in your response when calling propose_config_changes
-- The user can accept or reject your proposed config changes through their own UI
-- Explain WHY you're proposing changes, not just WHAT
-- Preserve all existing code, comments and structure when possible
-- Only change what's needed to complete the request of the user
-- Validate that changes align with Home Assistant documentation
-- Warn users about potential breaking changes
-- Suggest testing in a development environment for major changes
-- Remember when searching for files that terms are case-insensitive so don't search for multiple case variations of a word
-
-Response Style:
-- Be concise but thorough
-- Use technical terms appropriately
-- Provide examples when helpful
-- Format code blocks with YAML syntax
-- Ask clarifying questions if request is ambiguous
-
-Remember: You're helping manage a production Home Assistant system. Safety and clarity are paramount.
-```
-
-</details>
+   ```
 
 3. **Configure the add-on** to use your custom prompt:
+
    ```yaml
+
    system_prompt_file: "ai_agent_prompt.txt"
    ```
 
@@ -361,6 +382,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
 
 - Path must be **relative** to `/config`
 - Security: Path traversal is blocked (cannot access files outside `/config`)
+
 - Examples:
   - `ai_agent_prompt.txt` → `/config/ai_agent_prompt.txt`
   - `prompts/custom.txt` → `/config/prompts/custom.txt`
@@ -383,6 +405,7 @@ The `temperature` parameter controls the randomness and creativity of AI respons
 - **Empty/Default:** Uses the model's default temperature setting.
 
 **Example configurations:**
+
 ```yaml
 temperature: ""        # Use model default
 temperature: "0.5"     # Conservative, consistent (recommended)
@@ -397,12 +420,14 @@ temperature: "1.5"     # More creative
 The `enable_cache_control` option enables prompt caching for Anthropic Claude models, which can significantly reduce costs and improve response times for repeated conversations.
 
 **How it works:**
+
 - The system prompt is marked as cacheable
 - Claude caches the prompt for 5 minutes
-- Subsequent requests within 5 minutes reuse the cached prompt
+- constant requests within 5 minutes reuse the cached prompt
 - Reduces input token costs by ~90% for cached content
 
 **Configuration:**
+
 ```yaml
 enable_cache_control: true   # Enable for Anthropic Claude models
 enable_cache_control: false  # Disable for all other providers (default)
@@ -411,6 +436,7 @@ enable_cache_control: false  # Disable for all other providers (default)
 **⚠️ Important:** Only set to `true` when using **Anthropic Claude models** (claude-3-5-sonnet, claude-4-sonnet, etc.). This feature will cause errors or be ignored by other providers like OpenAI, Google, or OpenRouter with non-Anthropic models.
 
 **When to enable:**
+
 - ✅ Using direct Anthropic API with Claude models
 - ✅ Using OpenRouter with Anthropic Claude models
 - ❌ Using OpenAI, Google Gemini, or other providers
@@ -461,13 +487,16 @@ usage_tracking: "disabled"        # ✅ Doesn't report usage
 ```
 
 **⚠️ Important Notes:**
+
 - **OpenRouter:** Some models may not support either tracking method reliably. If you experience errors or missing token counts, use `disabled`.
+
 - **`stream_options` errors:** If a model doesn't support `stream_options`, it may cause streaming failures. Switch to `usage` or `disabled` if this occurs.
 - **Anthropic with `stream_options`:** While technically supported, `usage` is more reliable for Claude models through OpenRouter.
 
 #### Tips for Custom Prompts
 
 **Structure your prompt with:**
+
 - Clear role definition
 - Key responsibilities
 - Available tools (search_config_files, propose_config_changes)
@@ -475,6 +504,7 @@ usage_tracking: "disabled"        # ✅ Doesn't report usage
 - Response style preferences
 
 **Example use cases:**
+
 - Focus on specific integrations (e.g., "You specialize in Zigbee and Z-Wave configurations")
 - Emphasize automation best practices
 - Add domain-specific knowledge (e.g., "You understand solar energy systems")
@@ -490,6 +520,7 @@ usage_tracking: "disabled"        # ✅ Doesn't report usage
 1. Set up Azure OpenAI resource
 2. Deploy a model
 3. Configure the add-on:
+
    ```yaml
    openai_api_url: "https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions?api-version=2024-02-15-preview"
    openai_api_key: "your-azure-api-key"
@@ -525,6 +556,7 @@ The chat interface supports natural language requests about your Home Assistant 
 #### Token Usage Display
 
 The footer displays real-time cumulative token usage statistics for the current conversation:
+
 - **📊** - Token counter icon
 - **↓** - Input tokens (sent to the AI)
 - **↑** - Output tokens (received from the AI)
@@ -536,7 +568,7 @@ This helps you monitor API usage and costs throughout your conversation session.
 
 Ask questions to understand your configuration:
 
-```
+```text
 "Show me all my automations"
 "What entities are in the living room?"
 "List all my MQTT sensors"
@@ -547,7 +579,7 @@ Ask questions to understand your configuration:
 
 Request changes to your configuration:
 
-```
+```text
 "Enable debug logging for homeassistant.core"
 "Add a new automation to turn off all lights at 11pm"
 "Change the friendly name of sensor.temperature to 'Living Room Temp'"
@@ -558,7 +590,7 @@ Request changes to your configuration:
 
 Manage devices and entities:
 
-```
+```text
 "Rename the device 'Button 1' to 'Office Button'"
 "Move all bedroom devices to the bedroom area"
 "Disable the entity sensor.old_sensor"
@@ -611,6 +643,7 @@ The add-on can read and modify all Home Assistant configuration files:
 - Any YAML file in `/config`
 
 **Capabilities:**
+
 - Comment-preserving edits (preserves your notes)
 - Multi-file changes in single operation
 - Automatic backup before changes
@@ -622,18 +655,21 @@ The add-on can read and modify all Home Assistant configuration files:
 Manage devices and entities through the registry:
 
 **Devices:**
+
 - Rename devices
 - Assign to areas
 - Add labels
 - Enable/disable devices
 
 **Entities:**
+
 - Rename entities (friendly name or entity_id)
 - Change icons
 - Assign to areas
 - Add labels
 
 **Areas:**
+
 - Create new areas
 - Rename areas
 - Add icons and pictures
@@ -644,28 +680,33 @@ Manage devices and entities through the registry:
 The AI can work with "virtual files" that represent registry data:
 
 #### `lovelace.yaml`
+
 - Represents your Lovelace dashboard configuration
 - Read via WebSocket API
 - Write updates back via API
 - **Note:** Only works if Lovelace is in storage mode (not YAML mode)
 
 #### `devices/{device_id}.json`
+
 - Individual device from device registry
 - Contains: name, manufacturer, model, area, etc.
 - Modifications update the registry via WebSocket
 
 #### `entities/{entity_id}.json`
+
 - Individual entity from entity registry
 - Contains: name, icon, area, platform, etc.
 - Modifications update the registry via WebSocket
 
 #### `areas/{area_id}.json`
+
 - Individual area from area registry
 - Contains: name, icon, picture, aliases
 - Can create new areas or update existing ones
 
 **Example:**
-```
+
+```text
 You: "Rename device abc123 to 'Kitchen Light Switch'"
 AI: [Proposes changes to devices/abc123.json]
 You: [Approves]
@@ -683,7 +724,8 @@ The add-on automatically creates backups before every change.
 #### Backup Naming
 
 Backups are named with timestamps:
-```
+
+```text
 configuration_20250126_143022.yaml.backup
 automations_20250126_143145.yaml.backup
 ```
@@ -703,6 +745,7 @@ Backups are stored in the `/backup` directory within the add-on.
 To restore a backup:
 
 1. **Via API:**
+
    ```bash
    curl -X POST http://localhost:8099/api/config/restore \
      -H "Content-Type: application/json" \
@@ -718,6 +761,7 @@ To restore a backup:
 #### List Backups
 
 Via API:
+
 ```bash
 curl http://localhost:8099/api/config/backups?file_path=configuration.yaml
 ```
@@ -729,6 +773,7 @@ curl http://localhost:8099/api/config/backups?file_path=configuration.yaml
 **Cause:** OpenAI API key not configured or invalid
 
 **Solution:**
+
 1. Check add-on configuration
 2. Verify API key is correct
 3. Check logs for connection errors
@@ -739,6 +784,7 @@ curl http://localhost:8099/api/config/backups?file_path=configuration.yaml
 **Cause:** Proposed changes result in invalid Home Assistant configuration
 
 **Solution:**
+
 1. Review the error message in logs
 2. Changes are automatically rolled back
 3. Ask the AI to try a different approach
@@ -749,6 +795,7 @@ curl http://localhost:8099/api/config/backups?file_path=configuration.yaml
 **Cause:** Add-on doesn't have proper API access
 
 **Solution:**
+
 1. Verify `hassio_api: true` in `config.yaml`
 2. Check `hassio_role: manager` is set
 3. Restart the add-on
@@ -759,6 +806,7 @@ curl http://localhost:8099/api/config/backups?file_path=configuration.yaml
 **Cause:** Cannot connect to Home Assistant WebSocket API
 
 **Solution:**
+
 1. Verify Home Assistant is running
 2. Check network connectivity
 3. Review WebSocket URL: `ws://supervisor/core/websocket`
@@ -770,6 +818,7 @@ curl http://localhost:8099/api/config/backups?file_path=configuration.yaml
 **Cause:** Various reasons
 
 **Solution:**
+
 1. Check logs for specific error
 2. Verify file permissions
 3. Check disk space
@@ -781,6 +830,7 @@ curl http://localhost:8099/api/config/backups?file_path=configuration.yaml
 **Cause:** Model or network latency
 
 **Solution:**
+
 1. Try a faster model (e.g., `gpt-4o` instead of `gpt-4`)
 2. Use local Ollama for faster responses
 3. Check API provider status
@@ -833,7 +883,7 @@ curl http://localhost:8099/api/config/backups?file_path=configuration.yaml
 
 ### Local Development Setup
 
-#### Prerequisites
+#### Local Dev Prerequisites
 
 - Python 3.11 or higher
 - Git
@@ -883,7 +933,7 @@ uvicorn src.main:app --reload --port 8099
 
 1. **Make changes** to source files
 2. **Server auto-reloads** with `--reload` flag
-3. **Test in browser** at http://localhost:8099
+3. **Test in browser** at <http://localhost:8099>
 4. **Check logs** in terminal
 5. **Review changes** in `test_config/` directory
 
@@ -931,11 +981,13 @@ pytest tests/ --cov=src --cov-report=html
 
 #### Data Flow
 
-```
+```text
 User Input → Frontend → /api/chat → Agent System → Tools
                                         ↓
                                   Configuration Manager
+
                                         ↓
+
                                  HA Validation API
                                         ↓
                                   WebSocket Reload
@@ -956,7 +1008,7 @@ User Input → Frontend → /api/chat → Agent System → Tools
 
 Contributions are welcome! Please follow these guidelines:
 
-#### Getting Started
+#### Contribution Setup
 
 1. Fork the repository
 2. Create a feature branch
@@ -974,6 +1026,7 @@ Contributions are welcome! Please follow these guidelines:
 #### Commit Messages
 
 Follow conventional commits:
+
 - `feat:` New features
 - `fix:` Bug fixes
 - `docs:` Documentation changes
@@ -993,8 +1046,8 @@ Follow conventional commits:
 
 ## Support & Resources
 
-- **GitHub Issues:** https://github.com/yinzara/ha-config-ai-agent/issues
-- **Home Assistant Community:** https://community.home-assistant.io/
+- **Github Issues:** <https://github.com/yinzara/ha-config-ai-agent/issues>
+- **Home Assistant Community:** <https://community.home-assistant.io/>
 - **Documentation:** You're reading it!
 - **Technical Details:** See [CLAUDE.md](../CLAUDE.md)
 

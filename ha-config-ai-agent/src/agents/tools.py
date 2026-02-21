@@ -45,17 +45,20 @@ class AgentTools:
         self._lovelace_cache = None  # Cache Lovelace config to avoid repeated API calls
         logger.info("AgentTools initialized")
 
-    async def _get_lovelace_config(self) -> Optional[str]:
+    async def _get_lovelace_config(self, url_path: Optional[str] = None) -> Optional[str]:
         """
         Internal helper to retrieve Lovelace config.
 
         Uses hass API in custom component mode, WebSocket in add-on mode.
 
+        Args:
+            url_path: Optional URL path for custom dashboards
+
         Returns:
             YAML string of Lovelace config, or None if not available
         """
-        # Return cached version if available
-        if self._lovelace_cache:
+        # Return cached version if available (only for default)
+        if not url_path and self._lovelace_cache:
             return self._lovelace_cache
 
         try:
@@ -65,34 +68,29 @@ class AgentTools:
                 from ruamel.yaml import YAML
 
                 hass = self.config_manager.hass
-                logger.info("Using hass API to retrieve Lovelace config (custom component mode)")
+                logger.info(f"Using hass API to retrieve Lovelace config (path: {url_path or 'default'})")
 
                 # Check if lovelace is loaded
                 if LOVELACE_DOMAIN not in hass.data:
                     logger.warning("Lovelace component not loaded in hass.data")
                     return None
 
-                # Try to get the default dashboard (storage mode)
+                # Try to get the dashboard
                 try:
                     # Get the lovelace data (LovelaceData object)
                     lovelace_data = hass.data.get(LOVELACE_DOMAIN)
-                    logger.info(f"Lovelace data type: {type(lovelace_data)}")
 
                     if lovelace_data and hasattr(lovelace_data, 'dashboards'):
                         # LovelaceData has a dashboards dict
                         dashboards = lovelace_data.dashboards
-                        logger.info(f"Dashboard keys: {list(dashboards.keys())}")
+                        
+                        # Target specific dashboard or default
+                        dashboard = dashboards.get(url_path)
 
-                        # Try to get default dashboard (None key or 'lovelace' key)
-                        default_dashboard = dashboards.get(None) or dashboards.get('lovelace')
-
-                        if default_dashboard:
-                            logger.info(f"Found dashboard, type: {type(default_dashboard)}, has async_load: {hasattr(default_dashboard, 'async_load')}")
-
-                            config = await default_dashboard.async_load(False)
+                        if dashboard:
+                            config = await dashboard.async_load(False)
 
                             if config:
-                                logger.info(f"Loaded config with {len(config)} keys")
                                 # Convert config dict to YAML
                                 yaml = YAML()
                                 yaml.default_flow_style = False
@@ -101,19 +99,18 @@ class AgentTools:
                                 yaml.dump(config, stream)
                                 lovelace_yaml = stream.getvalue()
 
-                                self._lovelace_cache = lovelace_yaml
-                                logger.info("Successfully retrieved Lovelace config via hass API")
+                                if not url_path:
+                                    self._lovelace_cache = lovelace_yaml
                                 return lovelace_yaml
                             else:
-                                logger.warning("Dashboard async_load returned None or empty config")
+                                logger.warning(f"Dashboard {url_path or 'default'} async_load returned None")
                         else:
-                            logger.warning(f"No default dashboard found in dashboards: {list(dashboards.keys())}")
+                            logger.warning(f"Dashboard {url_path or 'default'} not found")
                     else:
                         logger.warning(f"No dashboards attribute found on lovelace_data")
                 except Exception as e:
-                    logger.error(f"Error accessing Lovelace dashboard: {e}", exc_info=True)
+                    logger.error(f"Error accessing Lovelace dashboard: {e}")
 
-                logger.warning("No Lovelace config available or not in storage mode")
                 return None
 
             # Add-on mode: use WebSocket API
@@ -123,10 +120,9 @@ class AgentTools:
                 return None
 
             ws_url = "ws://supervisor/core/websocket"
-            lovelace_yaml = await get_lovelace_config_as_yaml(ws_url, supervisor_token)
-            if lovelace_yaml:
+            lovelace_yaml = await get_lovelace_config_as_yaml(ws_url, supervisor_token, url_path=url_path)
+            if lovelace_yaml and not url_path:
                 self._lovelace_cache = lovelace_yaml
-                logger.info("Successfully retrieved Lovelace config via WebSocket")
             return lovelace_yaml
         except Exception as e:
             logger.debug(f"Failed to get Lovelace config: {e}")
@@ -272,6 +268,45 @@ class AgentTools:
             return areas
         except Exception as e:
             logger.debug(f"Failed to get areas: {e}")
+            return []
+
+    async def _get_all_dashboards(self) -> List[Dict[str, Any]]:
+        """
+        Internal helper to retrieve all Lovelace dashboards.
+        """
+        try:
+            # Custom component mode: use hass directly
+            if self.config_manager.hass is not None:
+                from homeassistant.components.lovelace.const import DOMAIN as LOVELACE_DOMAIN
+                hass = self.config_manager.hass
+                lovelace_data = hass.data.get(LOVELACE_DOMAIN)
+                dashboards = []
+                if lovelace_data and hasattr(lovelace_data, 'dashboards'):
+                    for url_path, dashboard in lovelace_data.dashboards.items():
+                        # We only handle storage-mode dashboards for editing
+                        if hasattr(dashboard, 'config'):
+                            dashboards.append({
+                                "id": getattr(dashboard, 'id', url_path),
+                                "url_path": url_path,
+                                "mode": "storage",
+                                "title": getattr(dashboard, 'title', url_path),
+                                "icon": getattr(dashboard, 'icon', None)
+                            })
+                return dashboards
+
+            # Add-on mode: use WebSocket API
+            from ..ha.ha_websocket import HomeAssistantWebSocket
+            supervisor_token = os.getenv('SUPERVISOR_TOKEN')
+            if not supervisor_token:
+                return []
+            ws_url = "ws://supervisor/core/websocket"
+            ws_client = HomeAssistantWebSocket(ws_url, supervisor_token)
+            await ws_client.connect()
+            dashboards = await ws_client.list_dashboards()
+            await ws_client.close()
+            return dashboards
+        except Exception as e:
+            logger.debug(f"Failed to get dashboards: {e}")
             return []
 
     async def search_config_files(
@@ -492,7 +527,54 @@ class AgentTools:
                 except Exception as e:
                     logger.debug(f"Could not retrieve areas (not critical): {e}")
 
-            # Handle lovelace.yaml
+            # Handle dashboards and lovelace layouts
+            try:
+                dashboards = await self._get_all_dashboards()
+                for db in dashboards:
+                    url_path = db.get('url_path')
+                    if not url_path: continue
+                    
+                    # 1. Dashboard metadata
+                    db_path = f"dashboards/{url_path}.json"
+                    db_json = json.dumps(db, indent=2)
+                    
+                    include_db = not search_pattern
+                    if search_pattern:
+                        content_matches = len(re.findall(re.escape(search_pattern), db_json, re.IGNORECASE))
+                        filename_matches = len(re.findall(re.escape(search_pattern), db_path, re.IGNORECASE))
+                        if content_matches + filename_matches > 0:
+                            include_db = True
+
+                    if include_db:
+                        files.append({
+                            "path": db_path,
+                            "content": db_json,
+                            "matches": 1 if search_pattern else None
+                        })
+
+                    # 2. Lovelace layout config
+                    layout_path = f"lovelace/{url_path}.yaml"
+                    layout_content = await self._get_lovelace_config(url_path=url_path)
+                    
+                    if layout_content:
+                        include_layout = not search_pattern
+                        if search_pattern:
+                            content_matches = len(re.findall(re.escape(search_pattern), layout_content, re.IGNORECASE))
+                            filename_matches = len(re.findall(re.escape(search_pattern), layout_path, re.IGNORECASE))
+                            if content_matches + filename_matches > 0:
+                                include_layout = True
+
+                        if include_layout:
+                            files.append({
+                                "path": layout_path,
+                                "content": layout_content,
+                                "matches": 1 if search_pattern else None
+                            })
+
+            except Exception as e:
+                 logger.debug(f"Could not retrieve dashboards (not critical): {e}")
+
+            # Handle lovelace.yaml (default)
             try:
                 lovelace_content = await self._get_lovelace_config()
                 if lovelace_content:
@@ -638,15 +720,30 @@ class AgentTools:
                     logger.info(f"Validating change for: {file_path}")
 
                     # Special handling for virtual files
-                    if file_path == "lovelace.yaml":
+                    if file_path == "lovelace.yaml" or file_path.startswith("lovelace/"):
+                        url_path = None
+                        if file_path.startswith("lovelace/"):
+                            url_path = file_path.replace("lovelace/", "").replace(".yaml", "")
+                        
                         # Get current Lovelace config
-                        current_content = await self._get_lovelace_config()
-                        if not current_content:
-                            errors.append({
-                                "file_path": file_path,
-                                "error": "Could not retrieve current Lovelace config"
-                            })
-                            continue
+                        current_content = await self._get_lovelace_config(url_path=url_path)
+                        if current_content is None:
+                             # New dashboard layout being created
+                             current_content = ""
+                             logger.info(f"Layout for {url_path or 'default'} will be created")
+                    elif file_path.startswith("dashboards/"):
+                        # Individual dashboard metadata
+                        url_path = file_path.replace("dashboards/", "").replace(".json", "")
+                        dashboards = await self._get_all_dashboards()
+                        current_db = next((d for d in dashboards if d.get('url_path') == url_path), None)
+                        
+                        if current_db:
+                            import json
+                            current_content = json.dumps(current_db, indent=2)
+                        else:
+                            current_content = "{}"
+                            logger.info(f"Dashboard metadata for {url_path} will be created")
+
                     elif file_path.startswith("devices/"):
                         # Individual device file: devices/{device_id}.json
                         device_id = file_path.replace("devices/", "").replace(".json", "")

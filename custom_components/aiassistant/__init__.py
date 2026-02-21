@@ -150,7 +150,7 @@ async def _start_server(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.info("Starting FastAPI server on 127.0.0.1:%s", port)
             await server.serve()
         except Exception as err:
-            _LOGGER.error("Failed to start AI Config Agent server: %s", err, exc_info=True)
+            _LOGGER.error("Failed to start AIassistant server: %s", err, exc_info=True)
 
     hass.data[DOMAIN][entry.entry_id]["server_task"] = hass.async_create_task(run_server())
     hass.data[DOMAIN][entry.entry_id]["server"] = server
@@ -161,7 +161,7 @@ async def _start_server(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Set the hass instance on the config manager for validation
     set_hass_instance(hass)
 
-    _LOGGER.info("AI Configuration Agent server task created on port %s", port)
+    _LOGGER.info("AIassistant server task created on port %s", port)
 
 
 async def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -247,7 +247,7 @@ async def _register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
     port = hass.data[DOMAIN][entry.entry_id]["port"]
 
     class AIConfigAgentView(HomeAssistantView):
-        """Proxy view for AI Config Agent."""
+        """Proxy view for AIassistant."""
 
         requires_auth = False  # Auth handled by panel iframe
         url = "/api/aiassistant/{path:.*}"
@@ -408,7 +408,7 @@ async def _register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    _LOGGER.info("Unloading AI Configuration Agent")
+    _LOGGER.info("Unloading AIassistant")
 
     # Stop the server
     entry_data = hass.data[DOMAIN].get(entry.entry_id)

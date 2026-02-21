@@ -18,7 +18,7 @@ class AiConfigAgentPanel extends HTMLElement {
 
     _connectWebSocket() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/api/ai_config_agent/ws/chat`;
+        const wsUrl = `${protocol}//${window.location.host}/api/aiassistant/ws/chat`;
 
         this._ws = new WebSocket(wsUrl);
 
@@ -83,7 +83,7 @@ class AiConfigAgentPanel extends HTMLElement {
             const buttons = cardElement.querySelectorAll('button');
             buttons.forEach(b => b.disabled = true);
 
-            const response = await fetch('/api/ai_config_agent/api/approve', {
+            const response = await fetch('/api/aiassistant/api/approve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -270,7 +270,7 @@ class AiConfigAgentPanel extends HTMLElement {
       </style>
       <div class="container">
         <header>
-            <span>AI Configuration Agent</span>
+            <span>AIassistant</span>
             <button id="export-btn" title="Download Conversation">💾 Save Chat</button>
         </header>
         <div id="chat-output">

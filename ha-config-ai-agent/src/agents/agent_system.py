@@ -133,8 +133,16 @@ Key Responsibilities:
 4. **Safety First**: Always explain the impact of changes before proposing them
 5. **Best Practices**: Guide users toward Home Assistant best practices
 
+Virtual File System for Non-File Resources:
+In addition to regular YAML files, you can manage the following resources as virtual files:
+- **Dashboards Metadata**: `dashboards/{url_path}.json` - Manage title, icon, and sidebar visibility.
+- **Lovelace Layouts**: `lovelace/{url_path}.yaml` - Manage the UI layout (cards, views, etc.). For the default dashboard, use `lovelace.yaml`.
+- **Devices**: `devices/{device_id}.json` - View device information.
+- **Entities**: `entities/{entity_id}.json` - View entity details.
+- **Areas**: `areas/{area_id}.json` - Manage or create areas (requires 'name' field for new areas).
+
 Available Tools:
-- search_config_files: Search for terms in configuration (use first)
+- search_config_files: Search for terms in configuration or list files (use first)
 - propose_config_changes: Propose changes for user approval
 
 Important Guidelines:
@@ -153,7 +161,7 @@ Response Style:
 - Be concise but thorough
 - Use technical terms appropriately
 - Provide examples when helpful
-- Format code blocks with YAML syntax
+- Format code blocks with YAML/JSON syntax
 - Ask clarifying questions if request is ambiguous
 
 Remember: You're helping manage a production Home Assistant system. Safety and clarity are paramount."""
@@ -279,7 +287,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                     "properties": {
                                         "file_path": {
                                             "type": "string",
-                                            "description": "Relative path to config file (e.g., 'configuration.yaml', 'switches.yaml'). New areas can be specified with 'areas/{area_id}.json' and must include the 'name'"
+                                            "description": "Relative path to config file (e.g., 'configuration.yaml', 'switches.yaml'). Virtual files: 'dashboards/{path}.json' (metadata), 'lovelace/{path}.yaml' (layout), 'areas/{id}.json' (requires 'name')."
                                         },
                                         "new_content": {
                                             "type": "string",
@@ -302,7 +310,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                     "type": "function",
                     "function": {
                         "name": "search_config_files",
-                        "description": "Search configuration files (all YAML files + lovelace.yaml, plus individual device/entity/area files if search_pattern matches). Returns individual files like devices/{id}.json, entities/{entity_id}.json, and areas/{area_id}.json for matching items. Devices/entities/areas are ONLY included when search_pattern is provided.",
+                        "description": "Search configuration files (YAML + virtual files). Includes dashboards/{path}.json, lovelace/{path}.yaml, devices/{id}.json, entities/{id}.json, and areas/{id}.json. Virtual files (except lovelace.yaml) are ONLY included when search_pattern is provided.",
                         "parameters": {
                             "type": "object",
                             "properties": {

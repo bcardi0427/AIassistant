@@ -219,8 +219,11 @@ class ConfigurationManager:
         elif file_path.startswith("areas/"):
             await self._write_area_json(file_path, content)
             return
-        elif file_path == "lovelace.yaml":
-            await self._write_lovelace_yaml(content)
+        elif file_path == "lovelace.yaml" or file_path.startswith("lovelace/"):
+            await self._write_lovelace_yaml(content, file_path)
+            return
+        elif file_path.startswith("dashboards/"):
+            await self._write_dashboard_json(file_path, content)
             return
 
         # Regular file handling
@@ -461,12 +464,66 @@ class ConfigurationManager:
         finally:
             await ws_client.close()
 
-    async def _write_lovelace_yaml(self, yaml_content: str):
+    async def _write_dashboard_json(self, file_path: str, json_content: str):
+        """
+        Write dashboard changes. Creates dashboard if it doesn't exist.
+        """
+        import json
+        url_path = file_path.replace("dashboards/", "").replace(".json", "")
+        dashboard = json.loads(json_content)
+
+        # Custom component mode: Not fully supported via hass.data yet for dashboards creation
+        if self.hass is not None:
+             raise ConfigurationError("Dashboard creation/editing via hass API not yet implemented in custom component mode")
+
+        # Add-on mode: use WebSocket API
+        from ..ha.ha_websocket import HomeAssistantWebSocket
+
+        supervisor_token = os.getenv('SUPERVISOR_TOKEN')
+        if not supervisor_token:
+            raise ConfigurationError("SUPERVISOR_TOKEN not available")
+
+        ws_url = "ws://supervisor/core/websocket"
+        ws_client = HomeAssistantWebSocket(ws_url, supervisor_token)
+
+        try:
+            await ws_client.connect()
+            dashboards = await ws_client.list_dashboards()
+            existing = next((d for d in dashboards if d.get('url_path') == url_path), None)
+
+            if existing:
+                await ws_client.update_dashboard(
+                    id=existing['id'],
+                    url_path=dashboard.get('url_path'),
+                    title=dashboard.get('title'),
+                    icon=dashboard.get('icon'),
+                    require_admin=dashboard.get('require_admin'),
+                    show_in_sidebar=dashboard.get('show_in_sidebar')
+                )
+                logger.info(f"Updated dashboard via WebSocket: {url_path}")
+            else:
+                await ws_client.create_dashboard(
+                    url_path=url_path,
+                    title=dashboard.get('title', url_path.capitalize()),
+                    icon=dashboard.get('icon'),
+                    require_admin=dashboard.get('require_admin', False),
+                    show_in_sidebar=dashboard.get('show_in_sidebar', True)
+                )
+                logger.info(f"Created dashboard via WebSocket: {url_path}")
+        finally:
+            await ws_client.close()
+
+    async def _write_lovelace_yaml(self, yaml_content: str, file_path: str = "lovelace.yaml"):
         """
         Write lovelace config.
 
         Uses hass API in custom component mode, WebSocket in add-on mode.
         """
+        # Extract url_path if specified
+        url_path = None
+        if file_path.startswith("lovelace/"):
+            url_path = file_path.replace("lovelace/", "").replace(".yaml", "")
+
         # Parse YAML to get the config structure
         config = self.yaml.load(yaml_content)
 
@@ -474,7 +531,7 @@ class ConfigurationManager:
         if self.hass is not None:
             from homeassistant.components.lovelace.const import DOMAIN as LOVELACE_DOMAIN
 
-            logger.info("Saving Lovelace config via hass API (custom component mode)")
+            logger.info(f"Saving Lovelace config (path: {url_path or 'default'}) via hass API")
 
             # Check if lovelace is loaded
             if LOVELACE_DOMAIN not in self.hass.data:
@@ -487,15 +544,15 @@ class ConfigurationManager:
                 # LovelaceData has a dashboards dict
                 dashboards = lovelace_data.dashboards
 
-                # Try to get default dashboard (None key or 'lovelace' key)
-                default_dashboard = dashboards.get(None) or dashboards.get('lovelace')
+                # Target specific dashboard or default
+                dashboard = dashboards.get(url_path)
 
-                if default_dashboard:
-                    await default_dashboard.async_save(config)
-                    logger.info("Updated Lovelace config via hass API")
+                if dashboard:
+                    await dashboard.async_save(config)
+                    logger.info(f"Updated Lovelace config ({url_path or 'default'}) via hass API")
                     return
                 else:
-                    raise ConfigurationError("Lovelace dashboard not available")
+                    raise ConfigurationError(f"Lovelace dashboard {url_path or 'default'} not available")
             else:
                 raise ConfigurationError("Lovelace dashboards not available")
 
@@ -511,8 +568,8 @@ class ConfigurationManager:
 
         try:
             await ws_client.connect()
-            await ws_client.save_lovelace_config(config)
-            logger.info("Updated Lovelace config via WebSocket")
+            await ws_client.save_lovelace_config(config, url_path=url_path)
+            logger.info(f"Updated Lovelace config ({url_path or 'default'}) via WebSocket")
         finally:
             await ws_client.close()
 
