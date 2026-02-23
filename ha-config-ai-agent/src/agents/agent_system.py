@@ -735,6 +735,9 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                     elif function_name == "get_system_info":
                         result = await self.tools.get_system_info(**function_args)
                         logger.info(f"[ITERATION {iteration}] Tool result: System info retrieved")
+                    elif function_name == "list_directory":
+                        result = await self.tools.list_directory(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: Directory listed - {result.get('count', 0)} items")
                     else:
                         result = {"success": False, "error": f"Unknown tool: {function_name}"}
                         logger.error(f"[ITERATION {iteration}] Unknown tool requested: {function_name}")

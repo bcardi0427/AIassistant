@@ -5,6 +5,12 @@ All notable changes to the AI Configuration Agent add-on will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.23] - 2026-02-23
+
+### Fixed
+- **Root cause fix for add-on config visibility**: Added `all_addon_configs` volume mapping to the add-on's `config.yaml`. The previous `addon_config` mapping only granted access to the AIassistant's own configuration directory, NOT other add-ons like Frigate. This is why the AI could never find Frigate's config files — the container had no filesystem access to them.
+- Registered the `list_directory` tool in the tool dispatch chain (was defined but not wired up, causing "Unknown tool" errors).
+
 ## [0.9.22] - 2026-02-23
 
 ### Added
