@@ -135,6 +135,7 @@ Key Responsibilities:
 
 Virtual File System for Non-File Resources:
 In addition to regular YAML files, you can manage the following resources as virtual files:
+- **Addon Configs**: `addon_configs/{addon_slug}/{config_file}` - Search and edit individual addon configurations.
 - **Dashboards Metadata**: `dashboards/{url_path}.json` - Manage title, icon, and sidebar visibility.
 - **Lovelace Layouts**: `lovelace/{url_path}.yaml` - Manage the UI layout (cards, views, etc.). For the default dashboard, use `lovelace.yaml`.
 - **Devices**: `devices/{device_id}.json` - View device information.
@@ -287,7 +288,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                     "properties": {
                                         "file_path": {
                                             "type": "string",
-                                            "description": "Relative path to config file (e.g., 'configuration.yaml', 'switches.yaml'). Virtual files: 'dashboards/{path}.json' (metadata), 'lovelace/{path}.yaml' (layout), 'areas/{id}.json' (requires 'name')."
+                                            "description": "Relative path to config file (e.g., 'configuration.yaml', 'switches.yaml'). Virtual files: 'addon_configs/{slug}/{file}', 'dashboards/{path}.json' (metadata), 'lovelace/{path}.yaml' (layout), 'areas/{id}.json' (requires 'name')."
                                         },
                                         "new_content": {
                                             "type": "string",
@@ -310,7 +311,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                     "type": "function",
                     "function": {
                         "name": "search_config_files",
-                        "description": "Search configuration files (YAML + virtual files). Includes dashboards/{path}.json, lovelace/{path}.yaml, devices/{id}.json, entities/{id}.json, and areas/{id}.json. Virtual files (except lovelace.yaml) are ONLY included when search_pattern is provided.",
+                        "description": "Search configuration files (YAML + virtual files). Includes addon_configs/{slug}/{file}, dashboards/{path}.json, lovelace/{path}.yaml, devices/{id}.json, entities/{id}.json, and areas/{id}.json. Virtual files (except lovelace.yaml and addon_configs/) are ONLY included when search_pattern is provided.",
                         "parameters": {
                             "type": "object",
                             "properties": {

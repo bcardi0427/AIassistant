@@ -387,6 +387,11 @@ class AgentTools:
                 # Find all YAML files
                 matched_paths = list(config_dir.glob("**/*.yaml"))
 
+                # Also search in addons_dir if available
+                if self.config_manager.addons_dir:
+                    addon_paths = list(self.config_manager.addons_dir.glob("**/*.yaml"))
+                    matched_paths.extend(addon_paths)
+
             # Filter to only files (not directories) and exclude custom_components
             matched_paths = [
                 p for p in matched_paths
@@ -399,7 +404,12 @@ class AgentTools:
             # Read files and optionally filter by content search
             files = []
             for path in matched_paths:
-                relative_path = str(path.relative_to(config_dir))
+                # Determine if this is an addon path or config path
+                if self.config_manager.addons_dir and str(path).startswith(str(self.config_manager.addons_dir)):
+                    relative_path = "addon_configs/" + str(path.relative_to(self.config_manager.addons_dir))
+                else:
+                    relative_path = str(path.relative_to(config_dir))
+
                 try:
                     content = await self.config_manager.read_file_raw(relative_path)
 

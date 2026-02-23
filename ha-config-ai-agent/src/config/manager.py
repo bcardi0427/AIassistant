@@ -47,6 +47,7 @@ class ConfigurationManager:
         self,
         config_dir: str,
         backup_dir: str,
+        addons_dir: Optional[str] = None,
         max_backups: int = 10,
         ha_check_config_cmd: str = "ha core check",
         hass = None
@@ -63,6 +64,7 @@ class ConfigurationManager:
         """
         self.config_dir = Path(config_dir).resolve()
         self.backup_dir = Path(backup_dir).resolve()
+        self.addons_dir = Path(addons_dir).resolve() if addons_dir else None
         self.max_backups = max_backups
         self.ha_check_config_cmd = ha_check_config_cmd
         self.hass = hass
@@ -79,6 +81,8 @@ class ConfigurationManager:
         logger.info(f"ConfigurationManager initialized:")
         logger.info(f"  Config dir: {self.config_dir}")
         logger.info(f"  Backup dir: {self.backup_dir}")
+        if self.addons_dir:
+            logger.info(f"  Addons dir: {self.addons_dir}")
         logger.info(f"  Max backups: {self.max_backups}")
 
     def _validate_path(self, file_path: str) -> Path:
@@ -94,6 +98,19 @@ class ConfigurationManager:
         Raises:
             ConfigurationError: If path is invalid or outside config_dir
         """
+        # Support addon_configs/ as a virtual prefix targeting addons_dir
+        if file_path.startswith("addon_configs/") and self.addons_dir:
+            # Remove the prefix and resolve against addons_dir
+            relative_addon_path = file_path.replace("addon_configs/", "", 1)
+            full_path = (self.addons_dir / relative_addon_path).resolve()
+
+            # Ensure path is within addons_dir (prevents path traversal)
+            if not str(full_path).startswith(str(self.addons_dir)):
+                raise ConfigurationError(
+                    f"Invalid path: {file_path} is outside addons directory"
+                )
+            return full_path
+
         # Resolve relative path against config_dir
         full_path = (self.config_dir / file_path).resolve()
 
