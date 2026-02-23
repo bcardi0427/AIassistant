@@ -381,15 +381,26 @@ class AgentTools:
                 logger.info(f"Detected file path pattern: {search_pattern}")
                 # Remove leading slash and use as glob pattern
                 glob_pattern = search_pattern.lstrip("/")
-                matched_paths = list(config_dir.glob(glob_pattern))
+                
+                # Check if it targets addon_configs
+                if glob_pattern.startswith("addon_configs/") and self.config_manager.addons_dir:
+                    # Remove the virtual prefix and search in addons_dir
+                    addon_glob = glob_pattern.replace("addon_configs/", "", 1)
+                    matched_paths = list(self.config_manager.addons_dir.glob(addon_glob))
+                else:
+                    # Search in config_dir
+                    matched_paths = list(config_dir.glob(glob_pattern))
+                
                 logger.info(f"File path pattern matched {len(matched_paths)} files")
             else:
-                # Find all YAML files
+                # Find all YAML and YML files
                 matched_paths = list(config_dir.glob("**/*.yaml"))
+                matched_paths.extend(list(config_dir.glob("**/*.yml")))
 
                 # Also search in addons_dir if available
                 if self.config_manager.addons_dir:
                     addon_paths = list(self.config_manager.addons_dir.glob("**/*.yaml"))
+                    addon_paths.extend(list(self.config_manager.addons_dir.glob("**/*.yml")))
                     matched_paths.extend(addon_paths)
 
             # Filter to only files (not directories) and exclude custom_components

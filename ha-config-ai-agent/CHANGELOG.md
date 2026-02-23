@@ -5,6 +5,26 @@ All notable changes to the AI Configuration Agent add-on will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.18] - 2026-02-23
+
+### Fixed
+- Enhanced `addon_configs/` search to support `.yml` file extensions.
+- Fixed glob pattern searching for the virtual `addon_configs/` path.
+
+## [0.9.17] - 2026-02-23
+
+### Added
+- Implemented support for the `addon_configs/` directory.
+- Added a virtual file system bridge for search and editing of individual add-on configurations.
+- Added `ADDONS_DIR` environment variable support (defaulting to `/addon_configs`).
+
+## [0.9.16] - 2021-02-21
+
+### Added
+- Implemented comprehensive Lovelace dashboard management.
+- Added new WebSocket API methods for listing, creating, updating, and deleting dashboards.
+- Introduced virtual file paths for dashboard metadata (`dashboards/{url_path}.json`) and layout configurations (`lovelace/{url_path}.yaml`).
+
 ## [0.9.15] - 2026-02-11
 
 ### Fixed
