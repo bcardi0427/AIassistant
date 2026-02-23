@@ -393,20 +393,25 @@ class AgentTools:
                 
                 logger.info(f"File path pattern matched {len(matched_paths)} files")
             else:
-                # Find all YAML and YML files
-                matched_paths = list(config_dir.glob("**/*.yaml"))
-                matched_paths.extend(list(config_dir.glob("**/*.yml")))
+                # Find all YAML, YML and JSON files
+                patterns = ["**/*.yaml", "**/*.yml", "**/*.json"]
+                matched_paths = []
+                for pattern in patterns:
+                    matched_paths.extend(list(config_dir.glob(pattern)))
 
                 # Also search in addons_dir if available
                 if self.config_manager.addons_dir:
-                    addon_paths = list(self.config_manager.addons_dir.glob("**/*.yaml"))
-                    addon_paths.extend(list(self.config_manager.addons_dir.glob("**/*.yml")))
-                    matched_paths.extend(addon_paths)
+                    for pattern in patterns:
+                        matched_paths.extend(list(self.config_manager.addons_dir.glob(pattern)))
 
-            # Filter to only files (not directories) and exclude custom_components
+            # Filter to only files (not directories) and exclude sensitive/hidden items
             matched_paths = [
                 p for p in matched_paths
-                if p.is_file() and 'custom_components' not in p.parts and 'secrets.yaml' not in p.parts
+                if p.is_file() 
+                and 'custom_components' not in p.parts 
+                and not any(part.startswith('.') for part in p.parts)
+                and 'secrets.yaml' not in p.parts
+                and 'secrets.json' not in p.parts
             ]
 
             # Sort for consistent results

@@ -5,6 +5,15 @@ All notable changes to the AI Configuration Agent add-on will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.20] - 2026-02-23
+
+### Added
+- Added support for searching and editing `.json` configuration files in both main and add-on configuration directories.
+
+### Fixed
+- Improved security filtering: Hidden files (starting with `.`) and internal directories (like `.storage`) are now automatically excluded from searches.
+- Expanded exclusion list to include `secrets.json`.
+
 ## [0.9.19] - 2026-02-23
 
 ### Fixed
