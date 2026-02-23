@@ -135,7 +135,7 @@ Key Responsibilities:
 
 Virtual File System for Non-File Resources:
 In addition to regular YAML files, you can manage the following resources as virtual files:
-- **Addon Configs**: `addon_configs/{addon_slug}/{config_file}` - Search and edit individual addon configurations.
+- **Addon Configs**: `addon_configs/{addon_slug}/{config_file}` - Search and edit individual addon configurations. Use `list_directory(directory_path="addon_configs")` to discover available add-ons.
 - **Dashboards Metadata**: `dashboards/{url_path}.json` - Manage title, icon, and sidebar visibility.
 - **Lovelace Layouts**: `lovelace/{url_path}.yaml` - Manage the UI layout (cards, views, etc.). For the default dashboard, use `lovelace.yaml`.
 - **Devices**: `devices/{device_id}.json` - View device information.
@@ -307,6 +307,22 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 propose_tool["cache_control"] = {"type": "ephemeral"}
 
             tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "list_directory",
+                        "description": "List files and folders in the configuration directory (or virtual folders like 'addon_configs'). Use this to explore the filesystem if search fails to find a file you expect to exist.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "directory_path": {
+                                    "type": "string",
+                                    "description": "Relative path to browse (e.g., '', 'packages', 'addon_configs', 'addon_configs/ccab4aaf_frigate')."
+                                }
+                            }
+                        }
+                    }
+                },
                 {
                     "type": "function",
                     "function": {

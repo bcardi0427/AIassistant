@@ -5,6 +5,18 @@ All notable changes to the AI Configuration Agent add-on will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.22] - 2026-02-23
+
+### Added
+- Added `list_directory` tool: The AI can now explicitly browse the configuration filesystem, including virtual paths like `addon_configs/`. This provides a fail-safe way to find files when search fails.
+- Updated System Prompt: Added instructions for the AI on how to use `list_directory` to discover add-on slugs and configuration files.
+
+### Improved
+- Re-engineered `search_config_files`: 
+    - Switched to `os.walk` for guaranteed recursive discovery (fixing issues where some depth levels were skipped).
+    - Massive increase in search limits: Now returns up to 500 files and allows up to 32KB of content per file.
+    - Improved hidden file/directory pruning for better performance in large repositories.
+
 ## [0.9.21] - 2026-02-23
 
 ### Fixed

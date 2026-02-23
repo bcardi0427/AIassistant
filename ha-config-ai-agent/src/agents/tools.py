@@ -393,45 +393,44 @@ class AgentTools:
                 
                 logger.info(f"File path pattern matched {len(matched_paths)} files")
             else:
-                # Find all YAML, YML and JSON files
-                patterns = ["**/*.yaml", "**/*.yml", "**/*.json"]
+                # Find all YAML, YML and JSON files using os.walk for maximum robustness
+                import os
+                
+                search_roots = [("config", config_dir)]
+                if self.config_manager.addons_dir and self.config_manager.addons_dir.exists():
+                    search_roots.append(("addons", self.config_manager.addons_dir))
+                
                 matched_paths = []
-                for pattern in patterns:
-                    matched_paths.extend(list(config_dir.glob(pattern)))
+                valid_extensions = ('.yaml', '.yml', '.json')
+                
+                for _, root_path in search_roots:
+                    for r, d, f in os.walk(root_path):
+                        # Skip sensitive directories
+                        if '.storage' in r or '.cloud' in r or 'custom_components' in r:
+                            d[:] = []
+                            continue
+                            
+                        # Skip hidden directories at root level
+                        try:
+                            rel_r = Path(r).relative_to(root_path)
+                            if any(part.startswith('.') for part in rel_r.parts):
+                                d[:] = []
+                                continue
+                        except ValueError:
+                            continue
 
-                # Also search in addons_dir if available
-                if self.config_manager.addons_dir:
-                    for pattern in patterns:
-                        matched_paths.extend(list(self.config_manager.addons_dir.glob(pattern)))
+                        for file in f:
+                            if file.lower().endswith(valid_extensions) and not file.startswith('.'):
+                                matched_paths.append(Path(r) / file)
 
-            # Filter to only files (not directories) and exclude sensitive/hidden items
+            # Filter to only files (not directories) and exclude sensitive items
             filtered_paths = []
             for p in matched_paths:
                 if not p.is_file():
                     continue
-                
-                # Determine which root this belongs to for hidden check
-                is_addon = False
-                root = config_dir
-                if self.config_manager.addons_dir and str(p).startswith(str(self.config_manager.addons_dir)):
-                    root = self.config_manager.addons_dir
-                    is_addon = True
-                
-                try:
-                    rel_p = p.relative_to(root)
-                    # Skip if any part of the RELATIVE path starts with '.'
-                    if any(part.startswith('.') for part in rel_p.parts):
-                        continue
-                except ValueError:
-                    # Not under either root? Shouldn't happen but skip to be safe
-                    continue
 
                 # Exclude specific sensitive files
                 if p.name in ('secrets.yaml', 'secrets.json'):
-                    continue
-                
-                # Exclude custom_components
-                if 'custom_components' in p.parts:
                     continue
                 
                 filtered_paths.append(p)
@@ -653,11 +652,11 @@ class AgentTools:
             except Exception as e:
                 logger.debug(f"Could not retrieve lovelace.yaml (not critical): {e}")
 
-            logger.info(f"Agent found {len(files)} files (searched {len(matched_paths)} YAML/JSON files + virtual files)")
+            logger.info(f"Agent found {len(files)} files (searched {len(matched_paths)} files + virtual files)")
 
-            # Limit results to prevent API overload
-            MAX_FILES = 100
-            MAX_CONTENT_LENGTH = 16000  # Characters per file
+            # Increase limits for better discovery
+            MAX_FILES = 500
+            MAX_CONTENT_LENGTH = 32000  # Characters per file
             
             # Sort by relevance
             if search_pattern and not is_file_path_pattern:
@@ -1283,4 +1282,85 @@ class AgentTools:
             }
         except Exception as e:
             return {"error": str(e)}
+
+    async def list_directory(self, directory_path: str = "") -> Dict[str, Any]:
+        """
+        List files and folders in the configuration directory.
+        Use this to browse the filesystem if you're not sure where a file is.
+        
+        Args:
+            directory_path: Relative path to browse (e.g., "", "packages/", "addon_configs/").
+        """
+        try:
+            from pathlib import Path
+            import os
+            from datetime import datetime
+            
+            # Handle virtual addon_configs/ prefix
+            if directory_path.startswith("addon_configs/"):
+                if not self.config_manager.addons_dir:
+                    return {"success": False, "error": "Addons directory is not configured."}
+                
+                rel_addon_path = directory_path.replace("addon_configs/", "", 1).strip("/")
+                full_path = (self.config_manager.addons_dir / rel_addon_path).resolve()
+                
+                # Security check
+                if not str(full_path).startswith(str(self.config_manager.addons_dir)):
+                     return {"success": False, "error": "Access denied: Path is outside addons directory."}
+            elif directory_path == "addon_configs":
+                 # List all available addons in the addons root
+                 if not self.config_manager.addons_dir:
+                    return {"success": False, "error": "Addons directory is not configured."}
+                 full_path = self.config_manager.addons_dir
+            else:
+                # Regular config directory
+                full_path = (self.config_manager.config_dir / directory_path).resolve()
+                
+                # Security check
+                if not str(full_path).startswith(str(self.config_manager.config_dir)):
+                    return {"success": False, "error": "Access denied: Path is outside config directory."}
+
+            if not full_path.exists():
+                return {"success": False, "error": f"Path does not exist: {directory_path}"}
+            
+            if not full_path.is_dir():
+                return {"success": False, "error": f"Path is not a directory: {directory_path}"}
+
+            items = []
+            for item in os.listdir(full_path):
+                # Always hide files/folders starting with .
+                if item.startswith('.'):
+                    continue
+                
+                # Hide sensitive files
+                if item in ('secrets.yaml', 'secrets.json'):
+                    continue
+                
+                item_path = full_path / item
+                is_dir = item_path.is_dir()
+                
+                # Hide custom_components from browse
+                if item == 'custom_components' and not directory_path:
+                    continue
+                    
+                stats = item_path.stat()
+                items.append({
+                    "name": item,
+                    "type": "directory" if is_dir else "file",
+                    "size": stats.st_size if not is_dir else None,
+                    "modified": datetime.fromtimestamp(stats.st_mtime).isoformat()
+                })
+            
+            # Sort: directories first, then files alphabetically
+            items.sort(key=lambda x: (0 if x["type"] == "directory" else 1, x["name"].lower()))
+            
+            return {
+                "success": True,
+                "current_path": directory_path,
+                "items": items,
+                "count": len(items)
+            }
+        except Exception as e:
+            logger.error(f"Error listing directory {directory_path}: {e}")
+            return {"success": False, "error": str(e)}
 
