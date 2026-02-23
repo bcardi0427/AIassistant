@@ -55,7 +55,7 @@ export USAGE_TRACKING=$(bashio::config 'usage_tracking' "stream_options")
 
 # Home Assistant configuration
 export HA_CONFIG_DIR="/homeassistant"
-export ADDON_CONFIG_DIR="/config"
+export ADDONS_DIR="/addon_configs"
 export BACKUP_DIR="/backup/config-agent"
 
 # Create backup directory

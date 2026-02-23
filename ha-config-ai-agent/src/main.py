@@ -13,7 +13,7 @@ import json as json_lib
 from .config import ConfigurationManager
 from .agents import AgentSystem
 
-version = "0.9.18"
+version = "0.9.19"
 
 # Configure logging
 log_level = os.getenv('LOG_LEVEL', 'info').upper()
@@ -67,7 +67,7 @@ async def lifespan(_: FastAPI):
             return ConfigurationManager(
                 config_dir=os.getenv('HA_CONFIG_DIR', '/config'),
                 backup_dir=os.getenv('BACKUP_DIR', '/backup'),
-                addons_dir=os.getenv('ADDONS_DIR', '/addon_configs')
+                addons_dir=os.getenv('ADDONS_DIR', os.getenv('ADDON_CONFIG_DIR', '/addon_configs'))
             )
 
         config_manager = await loop.run_in_executor(None, init_config_manager)

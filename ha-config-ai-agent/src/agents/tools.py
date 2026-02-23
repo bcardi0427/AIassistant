@@ -417,9 +417,11 @@ class AgentTools:
             for path in matched_paths:
                 # Determine if this is an addon path or config path
                 if self.config_manager.addons_dir and str(path).startswith(str(self.config_manager.addons_dir)):
-                    relative_path = "addon_configs/" + str(path.relative_to(self.config_manager.addons_dir))
+                    rel = path.relative_to(self.config_manager.addons_dir)
+                    relative_path = "addon_configs/" + str(rel).replace("\\", "/")
                 else:
-                    relative_path = str(path.relative_to(config_dir))
+                    rel = path.relative_to(config_dir)
+                    relative_path = str(rel).replace("\\", "/")
 
                 try:
                     content = await self.config_manager.read_file_raw(relative_path)

@@ -5,6 +5,12 @@ All notable changes to the AI Configuration Agent add-on will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.19] - 2026-02-23
+
+### Fixed
+- Fixed environment variable mapping for the add-on configuration directory (aligned `ADDONS_DIR` between `run.sh` and `main.py`).
+- Normalized virtual filesystem paths to use forward slashes consistently across all operating systems.
+
 ## [0.9.18] - 2026-02-23
 
 ### Fixed
