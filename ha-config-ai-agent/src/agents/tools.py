@@ -405,14 +405,38 @@ class AgentTools:
                         matched_paths.extend(list(self.config_manager.addons_dir.glob(pattern)))
 
             # Filter to only files (not directories) and exclude sensitive/hidden items
-            matched_paths = [
-                p for p in matched_paths
-                if p.is_file() 
-                and 'custom_components' not in p.parts 
-                and not any(part.startswith('.') for part in p.parts)
-                and 'secrets.yaml' not in p.parts
-                and 'secrets.json' not in p.parts
-            ]
+            filtered_paths = []
+            for p in matched_paths:
+                if not p.is_file():
+                    continue
+                
+                # Determine which root this belongs to for hidden check
+                is_addon = False
+                root = config_dir
+                if self.config_manager.addons_dir and str(p).startswith(str(self.config_manager.addons_dir)):
+                    root = self.config_manager.addons_dir
+                    is_addon = True
+                
+                try:
+                    rel_p = p.relative_to(root)
+                    # Skip if any part of the RELATIVE path starts with '.'
+                    if any(part.startswith('.') for part in rel_p.parts):
+                        continue
+                except ValueError:
+                    # Not under either root? Shouldn't happen but skip to be safe
+                    continue
+
+                # Exclude specific sensitive files
+                if p.name in ('secrets.yaml', 'secrets.json'):
+                    continue
+                
+                # Exclude custom_components
+                if 'custom_components' in p.parts:
+                    continue
+                
+                filtered_paths.append(p)
+            
+            matched_paths = filtered_paths
 
             # Sort for consistent results
             matched_paths.sort()
@@ -629,15 +653,25 @@ class AgentTools:
             except Exception as e:
                 logger.debug(f"Could not retrieve lovelace.yaml (not critical): {e}")
 
-            logger.info(f"Agent found {len(files)} files (searched {len(matched_paths)} YAML files + 3 virtual files)")
+            logger.info(f"Agent found {len(files)} files (searched {len(matched_paths)} YAML/JSON files + virtual files)")
 
             # Limit results to prevent API overload
-            MAX_FILES = 50
-            MAX_CONTENT_LENGTH = 2000  # Characters per file
+            MAX_FILES = 100
+            MAX_CONTENT_LENGTH = 16000  # Characters per file
             
-            # Sort by match count (highest first) if search pattern was used
+            # Sort by relevance
             if search_pattern and not is_file_path_pattern:
-                files.sort(key=lambda x: x.get("matches", 0), reverse=True)
+                # Primary sort: match count (desc), Secondary sort: file type (yaml before json)
+                files.sort(key=lambda x: (
+                    x.get("matches", 0),
+                    1 if x["path"].lower().endswith(('.yaml', '.yml')) else 0
+                ), reverse=True)
+            elif not search_pattern:
+                # Default sort: prioritize yaml/yml files
+                files.sort(key=lambda x: (
+                    1 if x["path"].lower().endswith(('.yaml', '.yml')) else 0,
+                    x["path"].lower()
+                ), reverse=True)
             
             # Track if we truncated results
             total_found = len(files)

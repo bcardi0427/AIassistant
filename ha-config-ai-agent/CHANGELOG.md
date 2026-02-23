@@ -5,6 +5,15 @@ All notable changes to the AI Configuration Agent add-on will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.21] - 2026-02-23
+
+### Fixed
+- Significantly improved the configuration search tool:
+    - Increased result limit from 50 to 100 files to prevent skipping relevant configs in large setups.
+    - Increased per-file content limit from 2KB to 16KB, allowing full review of complex YAML files (like Frigate or Zigbee2MQTT).
+    - Prioritized `.yaml` and `.yml` files in search results so they appear above entity registry JSONs.
+    - Improved hidden file detection to correctly handle absolute paths and custom Home Assistant installation directories.
+
 ## [0.9.20] - 2026-02-23
 
 ### Added
