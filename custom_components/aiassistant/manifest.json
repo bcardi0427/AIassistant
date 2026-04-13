@@ -18,7 +18,7 @@
     "uvicorn[standard]==0.27.0",
     "openai==1.58.1",
     "ruamel.yaml==0.18.5",
-    "google-genai>=0.3.0"
+    "google-genai>=1.0.0"
   ],
   "version": "0.9.24"
 }
