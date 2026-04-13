@@ -3,48 +3,12 @@
 # Disable Python output buffering for real-time streaming
 export PYTHONUNBUFFERED=1
 
-# Get provider configuration
-PROVIDER=$(bashio::config 'provider' "openai")
+# Get API keys
+export OPENAI_API_KEY=$(bashio::config 'openai_api_key' "")
+export GEMINI_API_KEY=$(bashio::config 'gemini_api_key' "")
+export OPENAI_API_URL=$(bashio::config 'api_url' "https://api.openai.com/v1")
+export MODEL=$(bashio::config 'model' "gpt-4o")
 
-# Migration: Check for old openai_* keys (backward compatibility)
-if bashio::config.exists 'openai_api_key' && ! bashio::config.exists 'api_key'; then
-    bashio::log.warning "Found legacy openai_* configuration. Please update to new key names."
-    export OPENAI_API_KEY=$(bashio::config 'openai_api_key')
-    export OPENAI_API_URL=$(bashio::config 'openai_api_url')
-    export OPENAI_MODEL=$(bashio::config 'openai_model')
-else
-    # Use new configuration keys
-    export OPENAI_API_KEY=$(bashio::config 'api_key' "")
-    export OPENAI_MODEL=$(bashio::config 'model' "gpt-4o")
-    
-    # Get API URL - if empty, determine from provider
-    API_URL=$(bashio::config 'api_url' "")
-    if [[ -z "$API_URL" ]]; then
-        case "$PROVIDER" in
-            "openai")
-                API_URL="https://api.openai.com/v1"
-                ;;
-            "gemini")
-                API_URL="https://generativelanguage.googleapis.com/v1beta/openai/"
-                ;;
-            "anthropic")
-                API_URL="https://api.anthropic.com/v1"
-                ;;
-            "openrouter")
-                API_URL="https://openrouter.ai/api/v1"
-                ;;
-            "ollama")
-                API_URL="http://localhost:11434/v1"
-                ;;
-            *)
-                # Custom or unknown - use OpenAI as fallback
-                API_URL="https://api.openai.com/v1"
-                ;;
-        esac
-        bashio::log.info "Auto-configured API URL for provider '${PROVIDER}': ${API_URL}"
-    fi
-    export OPENAI_API_URL="$API_URL"
-fi
 
 # Other configuration
 export LOG_LEVEL=$(bashio::config 'log_level' "info")
@@ -62,10 +26,10 @@ export BACKUP_DIR="/backup/config-agent"
 mkdir -p "${BACKUP_DIR}"
 
 # Log startup
-bashio::log.info "Starting AIassistant..."
-bashio::log.info "Provider: ${PROVIDER}"
+bashio::log.info "Starting AIassistant (Dual Provider Mode)..."
 bashio::log.info "API URL: ${OPENAI_API_URL}"
-bashio::log.info "Model: ${OPENAI_MODEL}"
+bashio::log.info "Model: ${MODEL}"
+
 bashio::log.info "HA Config: ${HA_CONFIG_DIR}"
 
 # Start application

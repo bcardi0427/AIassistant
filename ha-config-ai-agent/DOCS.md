@@ -49,7 +49,6 @@ The AIassistant can be installed as a local Home Assistant add-on.
 2. **Create the addons directory** (if it doesn't exist)
 
    ```bash
-
    mkdir -p /config/addons
    cd /config/addons
    ```
@@ -329,10 +328,8 @@ You can customize the AI agent's behavior by providing a custom system prompt fi
    **Default System Prompt:**
 
    ```text
-
    You are a Home Assistant Configuration Assistant.
 
-   
    Your role is to help users manage their Home Assistant configuration files safely and effectively.
    
    Key Responsibilities:
@@ -366,7 +363,6 @@ You can customize the AI agent's behavior by providing a custom system prompt fi
    - Ask clarifying questions if request is ambiguous
    
    Remember: You're helping manage a production Home Assistant system. Safety and clarity are paramount.
-
    ```
 
 3. **Configure the add-on** to use your custom prompt:
@@ -981,18 +977,17 @@ pytest tests/ --cov=src --cov-report=html
 
 #### Data Flow
 
-```text
-User Input → Frontend → /api/chat → Agent System → Tools
-                                        ↓
-                                  Configuration Manager
-
-                                        ↓
-
-                                 HA Validation API
-                                        ↓
-                                  WebSocket Reload
-                                        ↓
-                                  Response → Frontend
+```mermaid
+graph TD
+    A[User Input] --> B[Frontend]
+    B --> C[/api/chat]
+    C --> D[Agent System]
+    D --> E[Tools]
+    D --> F[Configuration Manager]
+    F --> G[HA Validation API]
+    G --> H[WebSocket Reload]
+    H --> I[Response]
+    I --> B
 ```
 
 #### Tech Stack

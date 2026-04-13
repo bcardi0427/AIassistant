@@ -13,6 +13,7 @@ _An AI-powered assistant that helps you manage your Home Assistant configuration
 AI Configuration Agent brings conversational AI to your Home Assistant configuration management. Simply describe what you want to change, review the proposed modifications, and approve them with confidence.
 
 **Chat with your configuration:**
+
 - "Enable debug logging for the MQTT integration"
 - "Show me all my automations that involve lights"
 - "Rename my 'Office Button' device to 'Desk Button'"
@@ -20,25 +21,27 @@ AI Configuration Agent brings conversational AI to your Home Assistant configura
 
 ## Features
 
-* 🤖 **Natural Language Interface** - No YAML expertise required
-* ✅ **Approval Workflow** - Review visual diffs before applying changes
-* 🔒 **Safe Operations** - Automatic backups, validation, and rollback
-* 📊 **Visual Diffs** - See exactly what will change
-* 🔌 **Flexible AI Providers** - OpenAI, OpenRouter, Ollama, Azure, or any OpenAI-compatible API
-* 📝 **Configuration Management** - Automations, scripts, Lovelace, devices, entities, and areas
-* 🔄 **Auto-Reload** - Home Assistant configuration reloads automatically after changes
-* 📈 **Token Usage Tracking** - Real-time display of cumulative input/output/cached tokens in the footer
+- 🤖 **Natural Language Interface** - No YAML expertise required
+- ✅ **Approval Workflow** - Review visual diffs before applying changes
+- 🔒 **Safe Operations** - Automatic backups, validation, and rollback
+- 📊 **Visual Diffs** - See exactly what will change
+- 🔌 **Flexible AI Providers** - OpenAI, OpenRouter, Ollama, Azure, or any OpenAI-compatible API
+- 📝 **Configuration Management** - Automations, scripts, Lovelace, devices, entities, and areas
+- 🔄 **Auto-Reload** - Home Assistant configuration reloads automatically after changes
+- 📈 **Token Usage Tracking** - Real-time display of cumulative input/output/cached tokens in the footer
 
 ## Configuration
 
 After installation, configure the add-on with your AI provider credentials:
 
 **Minimal Configuration (OpenAI):**
+
 ```yaml
 openai_api_key: "sk-your-openai-key-here"
 ```
 
 **Full Configuration:**
+
 ```yaml
 openai_api_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
 openai_api_key: "your-google-api-key-here"
@@ -61,6 +64,7 @@ openai_api_key: "sk-proj-your-key-here"
 openai_model: "gpt-4o"
 usage_tracking: "stream_options"
 ```
+
 </details>
 
 <details>
@@ -69,10 +73,11 @@ usage_tracking: "stream_options"
 ```yaml
 openai_api_url: "https://api.anthropic.com/v1/"
 openai_api_key: "sk-ant-your-key"
-openai_model: "claude-4-5-haiku
+openai_model: "claude-4-5-haiku"
 enable_cache_control: true
 usage_tracking: "usage"
 ```
+
 </details>
 
 <details>
@@ -84,7 +89,9 @@ openai_api_key: "sk-or-v1-your-key"
 openai_model: "anthropic/claude-3.5-sonnet"
 usage_tracking: "usage"
 ```
+
 </details>
+
 <details>
 <summary><b>Local Ollama</b> (Privacy-first)</summary>
 
@@ -93,6 +100,7 @@ openai_api_url: "http://ollama:11434/v1"
 openai_api_key: "ollama"
 openai_model: "llama3.2"
 ```
+
 </details>
 
 <details>
@@ -102,6 +110,7 @@ openai_model: "llama3.2"
 openai_api_url: "https://your-resource.openai.azure.com/openai/deployments/your-deployment"
 openai_api_key: "your-azure-key"
 ```
+
 </details>
 
 ### Custom System Prompt
@@ -111,6 +120,7 @@ You can customize the AI agent's behavior by providing a custom system prompt fi
 1. Create a text file in your Home Assistant `/config` directory (e.g., `ai_agent_prompt.txt`)
 2. Write your custom system prompt instructions
 3. Set the configuration option:
+
    ```yaml
    system_prompt_file: "ai_agent_prompt.txt"
    ```
@@ -133,7 +143,8 @@ See [DOCS.md](DOCS.md) for detailed configuration options and setup instructions
 ## Usage Examples
 
 ### Configuration Changes
-```
+
+```text
 You: Enable debug logging for homeassistant.core
 AI: I'll help you enable debug logging. [Proposes changes to logger config]
 You: [Reviews diff and approves]
@@ -141,7 +152,8 @@ AI: ✅ Successfully applied changes and reloaded configuration
 ```
 
 ### Device Management
-```
+
+```text
 You: Rename all my call button devices to include "Ludell"
 AI: I found 3 call button devices. [Proposes renaming them]
 You: [Approves changes]
@@ -149,7 +161,8 @@ AI: ✅ Renamed 3 devices successfully
 ```
 
 ### Information Queries
-```
+
+```text
 You: Show me all automations that trigger at sunset
 AI: [Lists and explains relevant automations - no changes]
 ```
@@ -187,9 +200,6 @@ MIT License - See [LICENSE](../LICENSE) for details
 
 ---
 
-**Made with ❤️ for the Home Assistant community**
+### Made with ❤️ for the Home Assistant community
 
-[releases-shield]: https://img.shields.io/github/release/yinzara/ha-config-ai-agent.svg
-[releases]: https://github.com/yinzara/ha-config-ai-agent/releases
-[license-shield]: https://img.shields.io/github/license/yinzara/ha-config-ai-agent.svg
 [maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg

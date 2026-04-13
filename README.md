@@ -3,6 +3,7 @@
 An AI-powered Home Assistant configuration assistant with approval workflow.
 
 **Chat with your configuration:**
+
 - "Enable debug logging for the MQTT integration"
 - "Show me all my automations that involve lights"
 - "Rename my 'Office Button' device to 'Desk Button'"
@@ -19,9 +20,9 @@ An AI-powered Home Assistant configuration assistant with approval workflow.
 | **Ollama** | Llama 3.3, Qwen 2.5, DeepSeek-R1, Mistral | Local models, no API key needed |
 | **Custom** | Any OpenAI-compatible API | For self-hosted or other providers |
 
-# Installation
+## Installation
 
-## Option 1: HACS Custom Component (Recommended for Core/Container)
+### Option 1: HACS Custom Component (Recommended for Core/Container)
 
 1. **Add to HACS:**
    - Open HACS → Integrations
@@ -40,7 +41,7 @@ An AI-powered Home Assistant configuration assistant with approval workflow.
    - **Step 1:** Select your AI provider (OpenAI, Gemini, Anthropic, etc.)
    - **Step 2:** Enter your API key and select a model
 
-## Option 2: Home Assistant Add-on (Supervisor Required)
+### Option 2: Home Assistant Add-on (Supervisor Required)
 
 1. Navigate to Settings → Add-ons → Add-on Store
 2. Click ⋮ → Repositories
@@ -52,9 +53,9 @@ An AI-powered Home Assistant configuration assistant with approval workflow.
    - **Model:** Select from the dropdown or choose "custom"
 6. Start the add-on
 
-# Configuration
+## Configuration
 
-## Using the Provider Dropdown
+### Using the Provider Dropdown
 
 When configuring the agent, simply select your AI provider from the dropdown. The API URL will be automatically configured for you:
 
@@ -67,7 +68,7 @@ When configuring the agent, simply select your AI provider from the dropdown. Th
 | Ollama | `http://localhost:11434/v1` |
 | Custom | Enter your own URL |
 
-## Configuration Options
+### Configuration Options
 
 | Option | Description | Required |
 |--------|-------------|----------|
@@ -83,7 +84,7 @@ When configuring the agent, simply select your AI provider from the dropdown. Th
 
 *Ollama doesn't require an API key for local models.
 
-# Features
+## Features
 
 * 🤖 **Natural Language Interface** - No YAML expertise required
 * ✅ **Approval Workflow** - Review visual diffs before applying changes
@@ -95,18 +96,18 @@ When configuring the agent, simply select your AI provider from the dropdown. Th
 * 📝 **Configuration Management** - Automations, scripts, Lovelace, devices, entities, and areas
 * 🔄 **Auto-Reload** - Home Assistant configuration reloads automatically after changes
 
-# Troubleshooting
+## Troubleshooting
 
-## Gemini 3 Models
+### Gemini 3 Models
 If you're using Gemini 3 models (like `gemini-3-flash-preview`) and encounter a "thought_signature" error, make sure you're using version 0.3.0 or later which includes the fix for this issue.
 
-## Custom Models
+### Custom Models
 If your model isn't in the dropdown, select "custom" from the model list and enter your model name in the API URL field, or use the options flow to enter a custom model name after initial setup.
 
-# Credits
+## Credits
 
 This project is a fork of [ha-config-ai-agent](https://github.com/yinzara/ha-config-ai-agent) by @yinzara, renamed for personal distribution and custom features.
 
-# License
+## License
 
 MIT License - See [LICENSE](LICENSE) file for details.
