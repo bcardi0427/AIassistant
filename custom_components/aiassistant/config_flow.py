@@ -17,6 +17,7 @@ from .const import (
     CONF_OPENAI_API_KEY,
     CONF_GEMINI_API_KEY,
     CONF_API_URL,
+    CONF_GEMINI_API_URL,
     CONF_MODEL,
     CONF_LOG_LEVEL,
     CONF_TEMPERATURE,
@@ -26,6 +27,7 @@ from .const import (
     OPENAI_MODELS,
     GEMINI_MODELS,
     DEFAULT_API_URL,
+    DEFAULT_GEMINI_API_URL,
     DEFAULT_MODEL,
     DEFAULT_LOG_LEVEL,
     DEFAULT_USAGE_TRACKING,
@@ -97,6 +99,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_OPENAI_API_KEY, default=""): cv.string,
             vol.Optional(CONF_GEMINI_API_KEY, default=""): cv.string,
             vol.Optional(CONF_API_URL, default=DEFAULT_API_URL): cv.string,
+            vol.Optional(CONF_GEMINI_API_URL, default=DEFAULT_GEMINI_API_URL): cv.string,
         })
 
         return self.async_show_form(
@@ -197,6 +200,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         current_openai_key = self.config_entry.data.get(CONF_OPENAI_API_KEY, "")
         current_gemini_key = self.config_entry.data.get(CONF_GEMINI_API_KEY, "")
         current_api_url = self.config_entry.data.get(CONF_API_URL, DEFAULT_API_URL)
+        current_gemini_url = self.config_entry.data.get(CONF_GEMINI_API_URL, DEFAULT_GEMINI_API_URL)
         
         # Build models list
         model_choices = []
@@ -223,6 +227,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Optional(
                     CONF_API_URL,
                     default=current_api_url
+                ): cv.string,
+                vol.Optional(
+                    CONF_GEMINI_API_URL,
+                    default=current_gemini_url
                 ): cv.string,
                 vol.Optional(
                     CONF_MODEL,

@@ -7,6 +7,7 @@ export PYTHONUNBUFFERED=1
 export OPENAI_API_KEY=$(bashio::config 'openai_api_key' "")
 export GEMINI_API_KEY=$(bashio::config 'gemini_api_key' "")
 export OPENAI_API_URL=$(bashio::config 'api_url' "https://api.openai.com/v1")
+export GEMINI_ENDPOINT=$(bashio::config 'gemini_api_url' "https://generativelanguage.googleapis.com")
 export MODEL=$(bashio::config 'model' "gpt-4o")
 
 

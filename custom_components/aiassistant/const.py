@@ -6,6 +6,7 @@ DOMAIN = "aiassistant"
 CONF_OPENAI_API_KEY = "openai_api_key"
 CONF_GEMINI_API_KEY = "gemini_api_key"
 CONF_API_URL = "api_url"
+CONF_GEMINI_API_URL = "gemini_api_url"
 CONF_MODEL = "model"
 CONF_LOG_LEVEL = "log_level"
 CONF_TEMPERATURE = "temperature"
@@ -34,6 +35,7 @@ GEMINI_MODELS = [
 
 # Default values
 DEFAULT_API_URL = "https://api.openai.com/v1"
+DEFAULT_GEMINI_API_URL = "https://generativelanguage.googleapis.com"
 DEFAULT_MODEL = "gpt-4o"
 DEFAULT_LOG_LEVEL = "info"
 DEFAULT_USAGE_TRACKING = "stream_options"

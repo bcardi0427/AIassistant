@@ -69,9 +69,25 @@ class AgentSystem:
         else:
             try:
                 from google import genai
-                self.gemini_client = genai.Client(api_key=gemini_key)
+                from google.genai import types
+                
+                gemini_endpoint = os.getenv('GEMINI_ENDPOINT')
+                client_kwargs = {"api_key": gemini_key}
+                
+                if gemini_endpoint:
+                    logger.info(f"Using custom Gemini endpoint: {gemini_endpoint}")
+                    client_kwargs["http_options"] = types.HttpOptions(
+                        base_url=gemini_endpoint,
+                        api_version='v1beta'  # Maintain consistency
+                    )
+                else:
+                    client_kwargs["http_options"] = {'api_version': 'v1beta'}
+                
+                self.gemini_client = genai.Client(**client_kwargs)
             except ImportError:
                 logger.error("google-genai package is not installed.")
+            except Exception as e:
+                logger.error(f"Failed to initialize Gemini client: {e}")
 
         self.model = os.getenv('MODEL', 'gpt-4o')
 
