@@ -160,7 +160,8 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
     async def chat_stream(
         self,
         user_message: str,
-        conversation_history: Optional[List[Dict[str, Any]]] = None
+        conversation_history: Optional[List[Dict[str, Any]]] = None,
+        image_data: Optional[str] = None
     ):
         """
         Process a user message and stream response events in real-time.
@@ -176,7 +177,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                     "data": json.dumps({"error": "Gemini API not configured. Please set GEMINI_API_KEY environment variable."})
                 }
                 return
-            async for event in self._stream_gemini(user_message, conversation_history):
+            async for event in self._stream_gemini(user_message, conversation_history, image_data):
                 yield event
         else:
             if not getattr(self, "openai_client", None):
@@ -186,13 +187,14 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                     "data": json.dumps({"error": "OpenAI API not configured. Please set OPENAI_API_KEY environment variable."})
                 }
                 return
-            async for event in self._stream_openai(user_message, conversation_history):
+            async for event in self._stream_openai(user_message, conversation_history, image_data):
                 yield event
 
     async def _stream_openai(
         self,
         user_message: str,
-        conversation_history: Optional[List[Dict[str, Any]]] = None
+        conversation_history: Optional[List[Dict[str, Any]]] = None,
+        image_data: Optional[str] = None
     ):
         """
         Process a user message and stream response events in real-time.
@@ -583,7 +585,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 "data": json.dumps({"error": str(e)})
             }
 
-    async def _stream_gemini(self, user_message, conversation_history):
+    async def _stream_gemini(self, user_message, conversation_history, image_data=None):
         from google import genai
         from google.genai import types
         import json

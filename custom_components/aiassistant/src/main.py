@@ -13,7 +13,7 @@ import json as json_lib
 from .config import ConfigurationManager
 from .agents import AgentSystem
 
-version = "0.9.26"
+version = "0.9.27"
 
 # Configure logging
 log_level = os.getenv('LOG_LEVEL', 'info').upper()
@@ -225,7 +225,8 @@ async def chat_websocket(websocket: WebSocket):
             try:
                 async for event in agent_system.chat_stream(
                     user_message=data.get("message", ""),
-                    conversation_history=data.get("conversation_history")
+                    conversation_history=data.get("conversation_history"),
+                    image_data=data.get("image_data")
                 ):
                     # Parse the JSON data if it's a string
                     event_data = event.get("data", "{}")
