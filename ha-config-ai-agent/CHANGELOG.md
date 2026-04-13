@@ -5,6 +5,11 @@ All notable changes to the AI Configuration Agent add-on will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.28] - 2026-04-13
+
+### Fixed
+- Corrected Gemini SDK Part usage (switched from from_text to text keyword argument).
+
 ## [0.9.27] - 2026-04-13
 
 ### Fixed

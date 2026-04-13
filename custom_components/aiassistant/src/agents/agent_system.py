@@ -598,9 +598,9 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
             if conversation_history:
                 for msg in conversation_history:
                     role = "user" if msg["role"] == "user" else "model"
-                    contents.append(types.Content(role=role, parts=[types.Part.from_text(msg["content"])]))
+                    contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
             
-            contents.append(types.Content(role="user", parts=[types.Part.from_text(user_message)]))
+            contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
 
             gemini_tools = [
                 types.Tool(
