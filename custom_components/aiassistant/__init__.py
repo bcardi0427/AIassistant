@@ -60,7 +60,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register frontend panel
     await _register_panel(hass, entry)
 
+    # Register update listener
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     return True
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload config entry when options are updated."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def _start_server(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -83,8 +91,8 @@ async def _start_server(hass: HomeAssistant, entry: ConfigEntry) -> None:
     except (FileNotFoundError, OSError) as err:
         _LOGGER.warning("Could not change to component directory, continuing anyway: %s", err)
 
-    # Set environment variables from config
-    config = entry.data
+    # Set environment variables from config (merge data and options)
+    config = {**entry.data, **entry.options}
     
     api_url = config.get(CONF_API_URL, DEFAULT_API_URL)
     

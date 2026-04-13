@@ -50,19 +50,30 @@ class AgentSystem:
         self.config_manager = config_manager
         self.tools = AgentTools(config_manager, agent_system=self)
 
-        # Initialize OpenAI client
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
+        # Initialize dual clients
+        self.openai_client = None
+        self.gemini_client = None
+        
+        openai_key = os.getenv('OPENAI_API_KEY')
+        if not openai_key:
             logger.warning("No OpenAI API key configured")
-            self.client = None
-            self.gemini_client = None
         else:
-            self.client = AsyncOpenAI(
-                api_key=api_key,
+            self.openai_client = AsyncOpenAI(
+                api_key=openai_key,
                 base_url=os.getenv('OPENAI_API_URL', 'https://api.openai.com/v1')
             )
+            
+        gemini_key = os.getenv('GEMINI_API_KEY')
+        if not gemini_key:
+            logger.warning("No Gemini API key configured")
+        else:
+            try:
+                from google import genai
+                self.gemini_client = genai.Client(api_key=gemini_key)
+            except ImportError:
+                logger.error("google-genai package is not installed.")
 
-        self.model = os.getenv('OPENAI_MODEL', 'gpt-4o')
+        self.model = os.getenv('MODEL', 'gpt-4o')
 
         # Get temperature from environment variable, use None if not specified
         temperature_str = os.getenv('TEMPERATURE')
@@ -75,50 +86,22 @@ class AgentSystem:
         self.usage_tracking = usage_tracking
 
         logger.info(f"AgentSystem initialized with model: {self.model}")
+        logger.info(f"OpenAI Client: {'initialized' if self.openai_client else 'not initialized'}")
+        logger.info(f"Gemini Client: {'initialized' if self.gemini_client else 'not initialized'}")
         if self.temperature is not None:
             logger.info(f"Temperature: {self.temperature}")
         logger.info(f"Cache control: {'enabled' if self.enable_cache_control else 'disabled'}")
         logger.info(f"Usage tracking: {self.usage_tracking}")
-        
-        # Log if using native Gemini
-        if hasattr(self, 'gemini_client') and self.gemini_client:
-            logger.info("Using native Gemini client for Gemini 3+ model")
 
         # In-memory storage for pending changesets
         self.pending_changesets: Dict[str, Changeset] = {}
 
         # System prompt for the configuration agent
         self.system_prompt = system_prompt or self._get_default_system_prompt()
-
-        # Context Injection: Load HA_CONTEXT.md if it exists
-        context_content = self._load_context_file()
-        if context_content:
-            logger.info(f"Injecting {len(context_content)} chars of context from HA_CONTEXT.md")
-            self.system_prompt += f"\n\n{context_content}"
-
         if system_prompt:
             logger.info(f"Using custom system prompt ({len(system_prompt)} characters)")
         else:
             logger.info("Using default system prompt")
-
-    def _load_context_file(self) -> Optional[str]:
-        """Load the HA_CONTEXT.md file from the project root if it exists."""
-        try:
-            # Look for HA_CONTEXT.md in the project root
-            # Current file is in src/agents/agent_system.py
-            # Root is 3 levels up: src/agents -> src -> ha-config-ai-agent -> Root
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            root_dir = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
-            
-            context_path = os.path.join(root_dir, 'HA_CONTEXT.md')
-            
-            if os.path.exists(context_path):
-                with open(context_path, 'r', encoding='utf-8') as f:
-                    return f.read()
-            return None
-        except Exception as e:
-            logger.warning(f"Failed to load context file: {e}")
-            return None
 
     def _get_default_system_prompt(self) -> str:
         """Get the default system prompt for the configuration agent."""
@@ -133,17 +116,8 @@ Key Responsibilities:
 4. **Safety First**: Always explain the impact of changes before proposing them
 5. **Best Practices**: Guide users toward Home Assistant best practices
 
-Virtual File System for Non-File Resources:
-In addition to regular YAML files, you can manage the following resources as virtual files:
-- **Addon Configs**: `addon_configs/{addon_slug}/{config_file}` - Search and edit individual addon configurations. Use `list_directory(directory_path="addon_configs")` to discover available add-ons.
-- **Dashboards Metadata**: `dashboards/{url_path}.json` - Manage title, icon, and sidebar visibility.
-- **Lovelace Layouts**: `lovelace/{url_path}.yaml` - Manage the UI layout (cards, views, etc.). For the default dashboard, use `lovelace.yaml`.
-- **Devices**: `devices/{device_id}.json` - View device information.
-- **Entities**: `entities/{entity_id}.json` - View entity details.
-- **Areas**: `areas/{area_id}.json` - Manage or create areas (requires 'name' field for new areas).
-
 Available Tools:
-- search_config_files: Search for terms in configuration or list files (use first)
+- search_config_files: Search for terms in configuration (use first)
 - propose_config_changes: Propose changes for user approval
 
 Important Guidelines:
@@ -162,17 +136,47 @@ Response Style:
 - Be concise but thorough
 - Use technical terms appropriately
 - Provide examples when helpful
-- Format code blocks with YAML/JSON syntax
+- Format code blocks with YAML syntax
 - Ask clarifying questions if request is ambiguous
 
 Remember: You're helping manage a production Home Assistant system. Safety and clarity are paramount."""
 
-
     async def chat_stream(
         self,
         user_message: str,
-        conversation_history: Optional[List[Dict[str, Any]]] = None,
-        image_data: Optional[str] = None
+        conversation_history: Optional[List[Dict[str, Any]]] = None
+    ):
+        """
+        Process a user message and stream response events in real-time.
+        Routes to the appropriate provider (OpenAI or Gemini) based on the configured model.
+        """
+        provider = "gemini" if self.model.startswith("gemini") else "openai"
+        
+        if provider == "gemini":
+            if not getattr(self, "gemini_client", None):
+                import json
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"error": "Gemini API not configured. Please set GEMINI_API_KEY environment variable."})
+                }
+                return
+            async for event in self._stream_gemini(user_message, conversation_history):
+                yield event
+        else:
+            if not getattr(self, "openai_client", None):
+                import json
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"error": "OpenAI API not configured. Please set OPENAI_API_KEY environment variable."})
+                }
+                return
+            async for event in self._stream_openai(user_message, conversation_history):
+                yield event
+
+    async def _stream_openai(
+        self,
+        user_message: str,
+        conversation_history: Optional[List[Dict[str, Any]]] = None
     ):
         """
         Process a user message and stream response events in real-time.
@@ -193,16 +197,14 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
         """
         import json
 
-        if not self.client:
+        if not self.openai_client:
             yield {
                 "event": "error",
                 "data": json.dumps({
-                    "error": "API not configured. Please set OPENAI_API_KEY environment variable."
+                    "error": "OpenAI API not configured. Please set OPENAI_API_KEY environment variable."
                 })
             }
             return
-
-
 
         try:
             logger.info(f"Agent streaming user message: {user_message[:100]}...")
@@ -234,41 +236,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 history_length += len(conversation_history)
 
             # Add current user message
-            if image_data:
-                content = [
-                    {"type": "text", "text": user_message},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": image_data
-                        }
-                    }
-                ]
-                messages.append({"role": "user", "content": content})
-            else:
-                messages.append({"role": "user", "content": user_message})
-
-            # Sanitize messages to remove orphaned tool responses (fixes 400 errors from bad history)
-            sanitized_messages = []
-            for msg in messages:
-                if msg.get("role") == "tool":
-                    if not sanitized_messages:
-                        logger.warning("Dropping orphaned tool message at start of conversation")
-                        continue
-                    prev = sanitized_messages[-1]
-                    if prev.get("role") == "assistant" and "tool_calls" in prev:
-                        # Check strictly if specific tool_call_id exists in previous message
-                        # This handles cases where multiple tools were called but history was truncated
-                        prev_tool_ids = [tc["id"] for tc in prev["tool_calls"]]
-                        if msg.get("tool_call_id") in prev_tool_ids:
-                            sanitized_messages.append(msg)
-                        else:
-                            logger.warning(f"Dropping tool message {msg.get('tool_call_id')}: ID not in previous assistant tool calls")
-                    else:
-                        logger.warning(f"Dropping orphaned tool message: Previous role was {prev.get('role')}")
-                else:
-                    sanitized_messages.append(msg)
-            messages = sanitized_messages
+            messages.append({"role": "user", "content": user_message})
 
             # Define available tools for function calling with cache control
             # Mark tools for caching to reduce repeated processing
@@ -288,7 +256,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                     "properties": {
                                         "file_path": {
                                             "type": "string",
-                                            "description": "Relative path to config file (e.g., 'configuration.yaml', 'switches.yaml'). Virtual files: 'addon_configs/{slug}/{file}', 'dashboards/{path}.json' (metadata), 'lovelace/{path}.yaml' (layout), 'areas/{id}.json' (requires 'name')."
+                                            "description": "Relative path to config file (e.g., 'configuration.yaml', 'switches.yaml'). New areas can be specified with 'areas/{area_id}.json' and must include the 'name'"
                                         },
                                         "new_content": {
                                             "type": "string",
@@ -310,24 +278,8 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 {
                     "type": "function",
                     "function": {
-                        "name": "list_directory",
-                        "description": "List files and folders in the configuration directory (or virtual folders like 'addon_configs'). Use this to explore the filesystem if search fails to find a file you expect to exist.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "directory_path": {
-                                    "type": "string",
-                                    "description": "Relative path to browse (e.g., '', 'packages', 'addon_configs', 'addon_configs/ccab4aaf_frigate')."
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
                         "name": "search_config_files",
-                        "description": "Search configuration files (YAML + virtual files). Includes addon_configs/{slug}/{file}, dashboards/{path}.json, lovelace/{path}.yaml, devices/{id}.json, entities/{id}.json, and areas/{id}.json. Virtual files (except lovelace.yaml and addon_configs/) are ONLY included when search_pattern is provided.",
+                        "description": "Search configuration files (all YAML files + lovelace.yaml, plus individual device/entity/area files if search_pattern matches). Returns individual files like devices/{id}.json, entities/{entity_id}.json, and areas/{area_id}.json for matching items. Devices/entities/areas are ONLY included when search_pattern is provided.",
                         "parameters": {
                             "type": "object",
                             "properties": {
@@ -336,133 +288,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                     "description": "Optional text to search for in file contents (case-insensitive). Only files containing this text will be returned. Omit to return all files."
                                 }
                             },
-                           "required": []
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "get_services",
-                        "description": "Get available services, optionally filtered by domain. Returns full schema including required fields, argument types, and descriptions. ALWAYS use this to verify arguments (e.g. brightness_pct vs brightness) before writing automations.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "domain": {
-                                    "type": "string",
-                                    "description": "Optional domain to filter by (e.g. 'light')"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "get_entity_states",
-                        "description": "Get current state of entities. Useful for checking values/attributes or debugging automations.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "entity_id": {
-                                    "type": "string",
-                                    "description": "Optional specific entity_id to look up. If omitted, returns list of all states."
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "validate_template",
-                        "description": "Render a Jinja2 template to verify it works as expected.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "template": {
-                                    "type": "string",
-                                    "description": "The template string to render."
-                                }
-                            },
-                            "required": ["template"]
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "check_config",
-                        "description": "Trigger a Home Assistant configuration check to verify validity. Use this before proposing complex changes.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {}
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "read_logs",
-                        "description": "Read the last N lines of home-assistant.log. Useful for diagnosing errors.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "lines": {
-                                    "type": "integer",
-                                    "description": "Number of lines to read (default 50, max 200)"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "git_status",
-                        "description": "Get current Git status of the configuration files. Shows uncommitted changes (modified, deleted, or new tracked files). Use this to audit before committing.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {}
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "git_commit",
-                        "description": "Commit all current changes to Git. Always call this after a change is successfully verified (applied and passed check_config). Provide a clear message of what was changed.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "Description of the changes made (e.g. 'Add living room light automation')"
-                                }
-                            },
-                            "required": ["message"]
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "git_rollback",
-                        "description": "Rollback all uncommitted changes to the last known working commit. Use this if a change fails validation, causes errors in logs, or if you want to undo recent modifications.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {}
-                        }
-                    }
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "get_system_info",
-                        "description": "Get Home Assistant system info like version, installed integrations, and time zone. Use this to check compatibility before proposing changes.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {}
+                            "required": []
                         }
                     }
                 },
@@ -505,7 +331,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 if self.temperature is not None:
                     api_params["temperature"] = self.temperature
 
-                stream = await self.client.chat.completions.create(**api_params)
+                stream = await self.openai_client.chat.completions.create(**api_params)
 
                 # Accumulate the streaming response
                 accumulated_content = ""
@@ -566,8 +392,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                 accumulated_tool_calls.append({
                                     "id": "",
                                     "type": "function",
-                                    "function": {"name": "", "arguments": ""},
-                                    "thought_signature": None  # For Gemini 3 compatibility
+                                    "function": {"name": "", "arguments": ""}
                                 })
 
                             current_tool_call = accumulated_tool_calls[index]
@@ -580,13 +405,6 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                                     current_tool_call["function"]["name"] = tool_call_delta.function.name
                                 if tool_call_delta.function.arguments:
                                     current_tool_call["function"]["arguments"] += tool_call_delta.function.arguments
-                            
-                            # Capture thought_signature for Gemini 3 models (if present)
-                            # It may be on the tool_call_delta itself or on the function object
-                            if hasattr(tool_call_delta, 'thought_signature') and tool_call_delta.thought_signature:
-                                current_tool_call["thought_signature"] = tool_call_delta.thought_signature
-                            elif hasattr(tool_call_delta.function, 'thought_signature') and tool_call_delta.function.thought_signature:
-                                current_tool_call["thought_signature"] = tool_call_delta.function.thought_signature
 
                         # Announce tool calls to UI as soon as we know them (may have partial arguments)
                         if not tool_calls_announced and any(tc.get("function", {}).get("name") for tc in accumulated_tool_calls):
@@ -655,28 +473,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 # Execute each tool call and stream results immediately
                 for tool_idx, tool_call in enumerate(accumulated_tool_calls):
                     function_name = tool_call["function"]["name"]
-                    
-                    # Parse function arguments with error handling
-                    raw_args = tool_call["function"]["arguments"]
-                    try:
-                        function_args = json.loads(raw_args)
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"[ITERATION {iteration}] Failed to parse tool arguments: {e}")
-                        logger.debug(f"Raw arguments: {raw_args}")
-                        # Try to extract first valid JSON object
-                        try:
-                            # Handle case where multiple JSON objects are concatenated
-                            import re
-                            match = re.match(r'^(\{[^{}]*\})', raw_args)
-                            if match:
-                                function_args = json.loads(match.group(1))
-                                logger.info(f"[ITERATION {iteration}] Extracted valid JSON from malformed response")
-                            else:
-                                function_args = {}
-                                logger.error(f"[ITERATION {iteration}] Could not extract valid JSON, using empty args")
-                        except Exception:
-                            function_args = {}
-                            logger.error(f"[ITERATION {iteration}] JSON recovery failed, using empty args")
+                    function_args = json.loads(tool_call["function"]["arguments"])
 
                     logger.info(f"[ITERATION {iteration}] Calling tool: {function_name}")
 
@@ -708,55 +505,17 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                         else:
                             result = await self.tools.propose_config_changes(**function_args)
                             logger.info(f"[ITERATION {iteration}] Tool result: success={result.get('success')}, changeset_id={result.get('changeset_id')}")
-                    elif function_name == "get_services":
-                        result = await self.tools.get_services(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Retrieved services")
-                    elif function_name == "get_entity_states":
-                        result = await self.tools.get_entity_states(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Retrieved states")
-                    elif function_name == "validate_template":
-                        result = await self.tools.validate_template(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Template rendered")
-                    elif function_name == "check_config":
-                        result = await self.tools.check_config(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Config check complete")
-                    elif function_name == "read_logs":
-                        result = await self.tools.read_logs(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Logs read")
-                    elif function_name == "git_status":
-                        result = await self.tools.git_status(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Git status retrieved")
-                    elif function_name == "git_commit":
-                        result = await self.tools.git_commit(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Git commit complete")
-                    elif function_name == "git_rollback":
-                        result = await self.tools.git_rollback(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Git rollback complete")
-                    elif function_name == "get_system_info":
-                        result = await self.tools.get_system_info(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: System info retrieved")
-                    elif function_name == "list_directory":
-                        result = await self.tools.list_directory(**function_args)
-                        logger.info(f"[ITERATION {iteration}] Tool result: Directory listed - {result.get('count', 0)} items")
                     else:
                         result = {"success": False, "error": f"Unknown tool: {function_name}"}
                         logger.error(f"[ITERATION {iteration}] Unknown tool requested: {function_name}")
 
                     # Add tool result to messages with cache control on the last tool result
                     is_last_tool = (tool_idx == len(accumulated_tool_calls) - 1)
-                    
-                    # Build clean tool message with only standard OpenAI fields
-                    # Note: thought_signature is not supported in OpenAI-compatible endpoint
                     tool_message = {
                         "role": "tool",
                         "tool_call_id": tool_call["id"],
                         "content": json.dumps(result)
                     }
-                    
-                    # Log if we had a thought_signature (for debugging)
-                    if tool_call.get("thought_signature"):
-                        logger.debug(f"[ITERATION {iteration}] Thought signature present but not included in message (not supported in OpenAI compat layer)")
-                    
                     # Mark the last tool result for caching to preserve full context
                     if self.enable_cache_control and is_last_tool:
                         tool_message["cache_control"] = {"type": "ephemeral"}
@@ -808,7 +567,264 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 "data": json.dumps({"error": str(e)})
             }
 
+    async def _stream_gemini(self, user_message, conversation_history):
+        from google import genai
+        from google.genai import types
+        import json
+        import uuid
 
+        try:
+            logger.info(f"Agent streaming user message via Gemini: {user_message[:100]}...")
+
+            contents = []
+            if conversation_history:
+                for msg in conversation_history:
+                    role = "user" if msg["role"] == "user" else "model"
+                    contents.append(types.Content(role=role, parts=[types.Part.from_text(msg["content"])]))
+            
+            contents.append(types.Content(role="user", parts=[types.Part.from_text(user_message)]))
+
+            gemini_tools = [
+                types.Tool(
+                    function_declarations=[
+                        types.FunctionDeclaration(
+                            name="search_config_files",
+                            description="Search configuration files (all YAML files + lovelace.yaml, plus individual device/entity/area files if search_pattern matches). Returns individual files like devices/{id}.json, entities/{entity_id}.json, and areas/{area_id}.json for matching items. Devices/entities/areas are ONLY included when search_pattern is provided.",
+                            parameters={"type": "OBJECT", "properties": {"search_pattern": {"type": "STRING", "description": "Optional text to search for in file contents (case-insensitive). Only files containing this text will be returned. Omit to return all files."}}}
+                        ),
+                        types.FunctionDeclaration(
+                            name="propose_config_changes",
+                            description="Propose changes to one or more configuration files for user approval. Use this to batch multiple file changes together. First use search_config_files to read files, then provide complete new content for each as YAML strings.",
+                            parameters={
+                                "type": "OBJECT",
+                                "properties": {
+                                    "changes": {
+                                        "type": "ARRAY",
+                                        "description": "Array of file changes. Each change must include file_path and new_content.",
+                                        "items": {
+                                            "type": "OBJECT",
+                                            "properties": {
+                                                "file_path": {
+                                                    "type": "STRING",
+                                                    "description": "Relative path to config file (e.g., 'configuration.yaml')."
+                                                },
+                                                "new_content": {
+                                                    "type": "STRING",
+                                                    "description": "The complete new content of the file as a valid YAML string."
+                                                }
+                                            },
+                                            "required": ["file_path", "new_content"]
+                                        }
+                                    }
+                                },
+                                "required": ["changes"]
+                            }
+                        )
+                    ]
+                )
+            ]
+
+            max_iterations = 10
+            iteration = 0
+            total_input_tokens = 0
+            total_output_tokens = 0
+            total_cached_tokens = 0
+            new_messages = []
+
+            while iteration < max_iterations:
+                iteration += 1
+                logger.info(f"[ITERATION {iteration}] Calling Gemini streaming API")
+
+                config_kwargs = {
+                    "tools": gemini_tools,
+                    "system_instruction": self.system_prompt,
+                    "automatic_function_calling": types.AutomaticFunctionCallingConfig(disable=True)
+                }
+                if self.temperature is not None:
+                    config_kwargs["temperature"] = self.temperature
+                    
+                config = types.GenerateContentConfig(**config_kwargs)
+
+                # Use async client
+                stream = await self.gemini_client.aio.models.generate_content_stream(
+                    model=self.model,
+                    contents=contents,
+                    config=config
+                )
+
+                accumulated_content = ""
+                accumulated_tool_calls = []
+                tool_calls_announced = False
+                
+                async for chunk in stream:
+                    if chunk.function_calls:
+                        for call in chunk.function_calls:
+                            call_id = f"call_{uuid.uuid4().hex[:10]}"
+                            accumulated_tool_calls.append({
+                                "id": call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": call.name,
+                                    "arguments": json.dumps(call.args)
+                                }
+                            })
+                            
+                        if not tool_calls_announced:
+                            yield {
+                                "event": "tool_call",
+                                "data": json.dumps({
+                                    "tool_calls": accumulated_tool_calls,
+                                    "iteration": iteration
+                                })
+                            }
+                            tool_calls_announced = True
+
+                    if chunk.text:
+                        accumulated_content += chunk.text
+                        yield {
+                            "event": "token",
+                            "data": json.dumps({
+                                "content": chunk.text,
+                                "iteration": iteration
+                            })
+                        }
+                        
+                    if chunk.usage_metadata:
+                        input_tokens = chunk.usage_metadata.prompt_token_count or 0
+                        output_tokens = chunk.usage_metadata.candidates_token_count or 0
+                        cached_tokens = chunk.usage_metadata.cached_content_token_count or 0
+                        total_input_tokens += input_tokens
+                        total_output_tokens += output_tokens
+                        total_cached_tokens += cached_tokens
+
+                if not accumulated_tool_calls:
+                    logger.info(f"[ITERATION {iteration}] No tool calls, final response received")
+                    assistant_message = {"role": "assistant", "content": accumulated_content}
+                    new_messages.append(assistant_message)
+                    yield {
+                        "event": "message_complete",
+                        "data": json.dumps({
+                            "message": assistant_message,
+                            "iteration": iteration,
+                            "usage": {
+                                "input_tokens": total_input_tokens,
+                                "output_tokens": total_output_tokens,
+                                "cached_tokens": total_cached_tokens,
+                                "total_tokens": total_input_tokens + total_output_tokens
+                            }
+                        })
+                    }
+                    break
+
+                logger.info(f"[ITERATION {iteration}] Processing {len(accumulated_tool_calls)} tool call(s)")
+                
+                parts = []
+                for tc in accumulated_tool_calls:
+                    parts.append(types.Part.from_function_call(
+                        name=tc["function"]["name"],
+                        args=json.loads(tc["function"]["arguments"])
+                    ))
+                contents.append(types.Content(role="model", parts=parts))
+
+                assistant_message = {
+                    "role": "assistant",
+                    "content": accumulated_content,
+                    "tool_calls": accumulated_tool_calls
+                }
+                new_messages.append(assistant_message)
+
+                if not tool_calls_announced:
+                    yield {
+                        "event": "tool_call",
+                        "data": json.dumps({
+                            "tool_calls": accumulated_tool_calls,
+                            "iteration": iteration
+                        })
+                    }
+                    tool_calls_announced = True
+
+                tool_response_parts = []
+                
+                for tool_call in accumulated_tool_calls:
+                    function_name = tool_call["function"]["name"]
+                    function_args = json.loads(tool_call["function"]["arguments"])
+
+                    logger.info(f"[ITERATION {iteration}] Calling tool: {function_name}")
+                    
+                    yield {
+                        "event": "tool_start",
+                        "data": json.dumps({
+                            "tool_call_id": tool_call["id"],
+                            "function": function_name,
+                            "arguments": function_args,
+                            "iteration": iteration
+                        })
+                    }
+
+                    if function_name == "search_config_files":
+                        result = await self.tools.search_config_files(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: success={result.get('success')}")
+                    elif function_name == "propose_config_changes":
+                        if "changes" not in function_args or not isinstance(function_args["changes"], list):
+                            error_msg = f"ERROR: propose_config_changes requires a 'changes' parameter..."
+                            result = {"success": False, "error": error_msg}
+                        else:
+                            result = await self.tools.propose_config_changes(**function_args)
+                            logger.info(f"[ITERATION {iteration}] Tool result: success={result.get('success')}")
+                    else:
+                        result = {"success": False, "error": f"Unknown tool: {function_name}"}
+
+                    yield {
+                        "event": "tool_result",
+                        "data": json.dumps({
+                            "tool_call_id": tool_call["id"],
+                            "function": function_name,
+                            "result": result,
+                            "iteration": iteration
+                        })
+                    }
+
+                    tool_message = {
+                        "role": "tool",
+                        "tool_call_id": tool_call["id"],
+                        "content": json.dumps(result)
+                    }
+                    new_messages.append(tool_message)
+                    
+                    tool_response_parts.append(types.Part.from_function_response(
+                        name=function_name,
+                        response={"result": result}
+                    ))
+
+                contents.append(types.Content(role="user", parts=tool_response_parts))
+
+            if iteration >= max_iterations:
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"error": "Maximum iteration limit reached."})
+                }
+
+            yield {
+                "event": "complete",
+                "data": json.dumps({
+                    "messages": new_messages,
+                    "iterations": iteration,
+                    "usage": {
+                        "input_tokens": total_input_tokens,
+                        "output_tokens": total_output_tokens,
+                        "cached_tokens": total_cached_tokens,
+                        "total_tokens": total_input_tokens + total_output_tokens
+                    }
+                })
+            }
+
+        except Exception as e:
+            logger.error(f"Gemini Agent streaming error: {e}", exc_info=True)
+            import json
+            yield {
+                "event": "error",
+                "data": json.dumps({"error": str(e)})
+            }
 
     def store_changeset(self, changeset_data: Dict[str, Any]) -> str:
         """

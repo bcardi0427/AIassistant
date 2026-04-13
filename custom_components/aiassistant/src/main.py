@@ -13,7 +13,7 @@ import json as json_lib
 from .config import ConfigurationManager
 from .agents import AgentSystem
 
-version = "0.9.15"
+version = "0.9.25"
 
 # Configure logging
 log_level = os.getenv('LOG_LEVEL', 'info').upper()
@@ -164,7 +164,8 @@ async def health_check():
         "version": version,
         "config_manager_ready": config_manager is not None,
         "agent_system_ready": agent_system is not None,
-        "openai_configured": bool(os.getenv('OPENAI_API_KEY'))
+        "openai_configured": bool(os.getenv('OPENAI_API_KEY')),
+        "gemini_configured": bool(os.getenv('GEMINI_API_KEY'))
     }
 
 # Root endpoint - will serve the UI

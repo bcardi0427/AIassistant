@@ -86,6 +86,8 @@ class AgentSystem:
         self.usage_tracking = usage_tracking
 
         logger.info(f"AgentSystem initialized with model: {self.model}")
+        logger.info(f"OpenAI Client: {'initialized' if self.openai_client else 'not initialized'}")
+        logger.info(f"Gemini Client: {'initialized' if self.gemini_client else 'not initialized'}")
         if self.temperature is not None:
             logger.info(f"Temperature: {self.temperature}")
         logger.info(f"Cache control: {'enabled' if self.enable_cache_control else 'disabled'}")
