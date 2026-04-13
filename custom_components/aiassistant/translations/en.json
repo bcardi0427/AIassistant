@@ -2,22 +2,30 @@
   "config": {
     "step": {
       "user": {
-        "title": "AIassistant",
-        "description": "Set up your AIassistant to manage Home Assistant configuration files through natural language.",
+        "title": "AIassistant: API Keys",
+        "description": "Configure your AI providers. You can provide an OpenAI key, a Gemini key, or both. At least one is required.",
         "data": {
-          "api_key": "OpenAI API Key",
-          "api_url": "API URL",
-          "model": "Model Name",
+          "openai_api_key": "OpenAI API Key (optional)",
+          "gemini_api_key": "Gemini API Key (optional)",
+          "api_url": "OpenAI Base API URL"
+        }
+      },
+      "configure": {
+        "title": "AIassistant: Logic Options",
+        "description": "Select the default model and behavior for your assistant.",
+        "data": {
+          "model": "Select Model",
           "log_level": "Log Level",
           "temperature": "Temperature (optional)",
           "system_prompt_file": "System Prompt File (optional)",
-          "enable_cache_control": "Enable Cache Control",
+          "enable_cache_control": "Enable Prompt Caching",
           "usage_tracking": "Usage Tracking Method"
         }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect to the API. Please check your API key and URL.",
+      "missing_keys": "At least one API key (OpenAI or Gemini) must be provided.",
       "unknown": "An unexpected error occurred."
     },
     "abort": {
@@ -29,12 +37,14 @@
       "init": {
         "title": "AIassistant Options",
         "data": {
-          "api_url": "API URL",
+          "openai_api_key": "OpenAI API Key",
+          "gemini_api_key": "Gemini API Key",
+          "api_url": "OpenAI API URL",
           "model": "Model Name",
           "log_level": "Log Level",
           "temperature": "Temperature (optional)",
           "system_prompt_file": "System Prompt File (optional)",
-          "enable_cache_control": "Enable Cache Control",
+          "enable_cache_control": "Enable Prompt Caching",
           "usage_tracking": "Usage Tracking Method"
         }
       }

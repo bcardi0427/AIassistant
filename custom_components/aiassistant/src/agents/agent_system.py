@@ -50,18 +50,30 @@ class AgentSystem:
         self.config_manager = config_manager
         self.tools = AgentTools(config_manager, agent_system=self)
 
-        # Initialize OpenAI client
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
+        # Initialize dual clients
+        self.openai_client = None
+        self.gemini_client = None
+        
+        openai_key = os.getenv('OPENAI_API_KEY')
+        if not openai_key:
             logger.warning("No OpenAI API key configured")
-            self.client = None
         else:
-            self.client = AsyncOpenAI(
-                api_key=api_key,
+            self.openai_client = AsyncOpenAI(
+                api_key=openai_key,
                 base_url=os.getenv('OPENAI_API_URL', 'https://api.openai.com/v1')
             )
+            
+        gemini_key = os.getenv('GEMINI_API_KEY')
+        if not gemini_key:
+            logger.warning("No Gemini API key configured")
+        else:
+            try:
+                from google import genai
+                self.gemini_client = genai.Client(api_key=gemini_key)
+            except ImportError:
+                logger.error("google-genai package is not installed.")
 
-        self.model = os.getenv('OPENAI_MODEL', 'gpt-4o')
+        self.model = os.getenv('MODEL', 'gpt-4o')
 
         # Get temperature from environment variable, use None if not specified
         temperature_str = os.getenv('TEMPERATURE')
@@ -134,6 +146,38 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
     ):
         """
         Process a user message and stream response events in real-time.
+        Routes to the appropriate provider (OpenAI or Gemini) based on the configured model.
+        """
+        provider = "gemini" if self.model.startswith("gemini") else "openai"
+        
+        if provider == "gemini":
+            if not getattr(self, "gemini_client", None):
+                import json
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"error": "Gemini API not configured. Please set GEMINI_API_KEY environment variable."})
+                }
+                return
+            async for event in self._stream_gemini(user_message, conversation_history):
+                yield event
+        else:
+            if not getattr(self, "openai_client", None):
+                import json
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"error": "OpenAI API not configured. Please set OPENAI_API_KEY environment variable."})
+                }
+                return
+            async for event in self._stream_openai(user_message, conversation_history):
+                yield event
+
+    async def _stream_openai(
+        self,
+        user_message: str,
+        conversation_history: Optional[List[Dict[str, Any]]] = None
+    ):
+        """
+        Process a user message and stream response events in real-time.
 
         Args:
             user_message: The user's message/request
@@ -151,7 +195,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
         """
         import json
 
-        if not self.client:
+        if not self.openai_client:
             yield {
                 "event": "error",
                 "data": json.dumps({
@@ -285,7 +329,7 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 if self.temperature is not None:
                     api_params["temperature"] = self.temperature
 
-                stream = await self.client.chat.completions.create(**api_params)
+                stream = await self.openai_client.chat.completions.create(**api_params)
 
                 # Accumulate the streaming response
                 accumulated_content = ""
@@ -516,6 +560,265 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
 
         except Exception as e:
             logger.error(f"Agent streaming error: {e}", exc_info=True)
+            yield {
+                "event": "error",
+                "data": json.dumps({"error": str(e)})
+            }
+
+    async def _stream_gemini(self, user_message, conversation_history):
+        from google import genai
+        from google.genai import types
+        import json
+        import uuid
+
+        try:
+            logger.info(f"Agent streaming user message via Gemini: {user_message[:100]}...")
+
+            contents = []
+            if conversation_history:
+                for msg in conversation_history:
+                    role = "user" if msg["role"] == "user" else "model"
+                    contents.append(types.Content(role=role, parts=[types.Part.from_text(msg["content"])]))
+            
+            contents.append(types.Content(role="user", parts=[types.Part.from_text(user_message)]))
+
+            gemini_tools = [
+                types.Tool(
+                    function_declarations=[
+                        types.FunctionDeclaration(
+                            name="search_config_files",
+                            description="Search configuration files (all YAML files + lovelace.yaml, plus individual device/entity/area files if search_pattern matches). Returns individual files like devices/{id}.json, entities/{entity_id}.json, and areas/{area_id}.json for matching items. Devices/entities/areas are ONLY included when search_pattern is provided.",
+                            parameters={"type": "OBJECT", "properties": {"search_pattern": {"type": "STRING", "description": "Optional text to search for in file contents (case-insensitive). Only files containing this text will be returned. Omit to return all files."}}}
+                        ),
+                        types.FunctionDeclaration(
+                            name="propose_config_changes",
+                            description="Propose changes to one or more configuration files for user approval. Use this to batch multiple file changes together. First use search_config_files to read files, then provide complete new content for each as YAML strings.",
+                            parameters={
+                                "type": "OBJECT",
+                                "properties": {
+                                    "changes": {
+                                        "type": "ARRAY",
+                                        "description": "Array of file changes. Each change must include file_path and new_content.",
+                                        "items": {
+                                            "type": "OBJECT",
+                                            "properties": {
+                                                "file_path": {
+                                                    "type": "STRING",
+                                                    "description": "Relative path to config file (e.g., 'configuration.yaml')."
+                                                },
+                                                "new_content": {
+                                                    "type": "STRING",
+                                                    "description": "The complete new content of the file as a valid YAML string."
+                                                }
+                                            },
+                                            "required": ["file_path", "new_content"]
+                                        }
+                                    }
+                                },
+                                "required": ["changes"]
+                            }
+                        )
+                    ]
+                )
+            ]
+
+            max_iterations = 10
+            iteration = 0
+            total_input_tokens = 0
+            total_output_tokens = 0
+            total_cached_tokens = 0
+            new_messages = []
+
+            while iteration < max_iterations:
+                iteration += 1
+                logger.info(f"[ITERATION {iteration}] Calling Gemini streaming API")
+
+                config_kwargs = {
+                    "tools": gemini_tools,
+                    "system_instruction": self.system_prompt,
+                    "automatic_function_calling": types.AutomaticFunctionCallingConfig(disable=True)
+                }
+                if self.temperature is not None:
+                    config_kwargs["temperature"] = self.temperature
+                    
+                config = types.GenerateContentConfig(**config_kwargs)
+
+                # Use async client
+                stream = await self.gemini_client.aio.models.generate_content_stream(
+                    model=self.model,
+                    contents=contents,
+                    config=config
+                )
+
+                accumulated_content = ""
+                accumulated_tool_calls = []
+                tool_calls_announced = False
+                
+                async for chunk in stream:
+                    if chunk.function_calls:
+                        for call in chunk.function_calls:
+                            call_id = f"call_{uuid.uuid4().hex[:10]}"
+                            accumulated_tool_calls.append({
+                                "id": call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": call.name,
+                                    "arguments": json.dumps(call.args)
+                                }
+                            })
+                            
+                        if not tool_calls_announced:
+                            yield {
+                                "event": "tool_call",
+                                "data": json.dumps({
+                                    "tool_calls": accumulated_tool_calls,
+                                    "iteration": iteration
+                                })
+                            }
+                            tool_calls_announced = True
+
+                    if chunk.text:
+                        accumulated_content += chunk.text
+                        yield {
+                            "event": "token",
+                            "data": json.dumps({
+                                "content": chunk.text,
+                                "iteration": iteration
+                            })
+                        }
+                        
+                    if chunk.usage_metadata:
+                        input_tokens = chunk.usage_metadata.prompt_token_count or 0
+                        output_tokens = chunk.usage_metadata.candidates_token_count or 0
+                        cached_tokens = chunk.usage_metadata.cached_content_token_count or 0
+                        total_input_tokens += input_tokens
+                        total_output_tokens += output_tokens
+                        total_cached_tokens += cached_tokens
+
+                if not accumulated_tool_calls:
+                    logger.info(f"[ITERATION {iteration}] No tool calls, final response received")
+                    assistant_message = {"role": "assistant", "content": accumulated_content}
+                    new_messages.append(assistant_message)
+                    yield {
+                        "event": "message_complete",
+                        "data": json.dumps({
+                            "message": assistant_message,
+                            "iteration": iteration,
+                            "usage": {
+                                "input_tokens": total_input_tokens,
+                                "output_tokens": total_output_tokens,
+                                "cached_tokens": total_cached_tokens,
+                                "total_tokens": total_input_tokens + total_output_tokens
+                            }
+                        })
+                    }
+                    break
+
+                logger.info(f"[ITERATION {iteration}] Processing {len(accumulated_tool_calls)} tool call(s)")
+                
+                parts = []
+                for tc in accumulated_tool_calls:
+                    parts.append(types.Part.from_function_call(
+                        name=tc["function"]["name"],
+                        args=json.loads(tc["function"]["arguments"])
+                    ))
+                contents.append(types.Content(role="model", parts=parts))
+
+                assistant_message = {
+                    "role": "assistant",
+                    "content": accumulated_content,
+                    "tool_calls": accumulated_tool_calls
+                }
+                new_messages.append(assistant_message)
+
+                if not tool_calls_announced:
+                    yield {
+                        "event": "tool_call",
+                        "data": json.dumps({
+                            "tool_calls": accumulated_tool_calls,
+                            "iteration": iteration
+                        })
+                    }
+                    tool_calls_announced = True
+
+                tool_response_parts = []
+                
+                for tool_call in accumulated_tool_calls:
+                    function_name = tool_call["function"]["name"]
+                    function_args = json.loads(tool_call["function"]["arguments"])
+
+                    logger.info(f"[ITERATION {iteration}] Calling tool: {function_name}")
+                    
+                    yield {
+                        "event": "tool_start",
+                        "data": json.dumps({
+                            "tool_call_id": tool_call["id"],
+                            "function": function_name,
+                            "arguments": function_args,
+                            "iteration": iteration
+                        })
+                    }
+
+                    if function_name == "search_config_files":
+                        result = await self.tools.search_config_files(**function_args)
+                        logger.info(f"[ITERATION {iteration}] Tool result: success={result.get('success')}")
+                    elif function_name == "propose_config_changes":
+                        if "changes" not in function_args or not isinstance(function_args["changes"], list):
+                            error_msg = f"ERROR: propose_config_changes requires a 'changes' parameter..."
+                            result = {"success": False, "error": error_msg}
+                        else:
+                            result = await self.tools.propose_config_changes(**function_args)
+                            logger.info(f"[ITERATION {iteration}] Tool result: success={result.get('success')}")
+                    else:
+                        result = {"success": False, "error": f"Unknown tool: {function_name}"}
+
+                    yield {
+                        "event": "tool_result",
+                        "data": json.dumps({
+                            "tool_call_id": tool_call["id"],
+                            "function": function_name,
+                            "result": result,
+                            "iteration": iteration
+                        })
+                    }
+
+                    tool_message = {
+                        "role": "tool",
+                        "tool_call_id": tool_call["id"],
+                        "content": json.dumps(result)
+                    }
+                    new_messages.append(tool_message)
+                    
+                    tool_response_parts.append(types.Part.from_function_response(
+                        name=function_name,
+                        response={"result": result}
+                    ))
+
+                contents.append(types.Content(role="user", parts=tool_response_parts))
+
+            if iteration >= max_iterations:
+                yield {
+                    "event": "error",
+                    "data": json.dumps({"error": "Maximum iteration limit reached."})
+                }
+
+            yield {
+                "event": "complete",
+                "data": json.dumps({
+                    "messages": new_messages,
+                    "iterations": iteration,
+                    "usage": {
+                        "input_tokens": total_input_tokens,
+                        "output_tokens": total_output_tokens,
+                        "cached_tokens": total_cached_tokens,
+                        "total_tokens": total_input_tokens + total_output_tokens
+                    }
+                })
+            }
+
+        except Exception as e:
+            logger.error(f"Gemini Agent streaming error: {e}", exc_info=True)
+            import json
             yield {
                 "event": "error",
                 "data": json.dumps({"error": str(e)})

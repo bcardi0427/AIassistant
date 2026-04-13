@@ -14,17 +14,16 @@ import voluptuous as vol
 
 from .const import (
     DOMAIN,
-    CONF_API_KEY,
+    CONF_OPENAI_API_KEY,
+    CONF_GEMINI_API_KEY,
     CONF_API_URL,
     CONF_MODEL,
-    CONF_PROVIDER,
     CONF_LOG_LEVEL,
     CONF_TEMPERATURE,
     CONF_SYSTEM_PROMPT_FILE,
     CONF_ENABLE_CACHE_CONTROL,
     CONF_USAGE_TRACKING,
-    PROVIDER_URLS,
-    DEFAULT_PROVIDER,
+    DEFAULT_API_URL,
     DEFAULT_MODEL,
 )
 
@@ -87,18 +86,12 @@ async def _start_server(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Set environment variables from config
     config = entry.data
     
-    # Get provider and determine API URL
-    provider = config.get(CONF_PROVIDER, DEFAULT_PROVIDER)
-    api_url = config.get(CONF_API_URL, "")
+    api_url = config.get(CONF_API_URL, DEFAULT_API_URL)
     
-    # If API URL is empty, use provider default
-    if not api_url:
-        api_url = PROVIDER_URLS.get(provider, "https://api.openai.com/v1")
-        _LOGGER.info("Auto-configured API URL for provider '%s': %s", provider, api_url)
-    
-    os.environ["OPENAI_API_KEY"] = config.get(CONF_API_KEY, "")
+    os.environ["OPENAI_API_KEY"] = config.get(CONF_OPENAI_API_KEY, "")
+    os.environ["GEMINI_API_KEY"] = config.get(CONF_GEMINI_API_KEY, "")
     os.environ["OPENAI_API_URL"] = api_url
-    os.environ["OPENAI_MODEL"] = config.get(CONF_MODEL, DEFAULT_MODEL)
+    os.environ["MODEL"] = config.get(CONF_MODEL, DEFAULT_MODEL)
     os.environ["HA_CONFIG_DIR"] = hass.config.config_dir
     os.environ["BACKUP_DIR"] = os.path.join(hass.config.config_dir, ".ai_agent_backups")
     os.environ["LOG_LEVEL"] = config.get(CONF_LOG_LEVEL, "info")
