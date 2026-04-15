@@ -673,8 +673,14 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 accumulated_content = ""
                 accumulated_tool_calls = []
                 tool_calls_announced = False
+                accumulated_thought_signature = None
                 
                 async for chunk in stream:
+                    if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
+                        for p in chunk.candidates[0].content.parts:
+                            if getattr(p, 'thought_signature', None):
+                                accumulated_thought_signature = p.thought_signature
+
                     if chunk.function_calls:
                         for call in chunk.function_calls:
                             call_id = f"call_{uuid.uuid4().hex[:10]}"
@@ -737,11 +743,14 @@ Remember: You're helping manage a production Home Assistant system. Safety and c
                 logger.info(f"[ITERATION {iteration}] Processing {len(accumulated_tool_calls)} tool call(s)")
                 
                 parts = []
-                for tc in accumulated_tool_calls:
-                    parts.append(types.Part.from_function_call(
+                for idx, tc in enumerate(accumulated_tool_calls):
+                    part = types.Part.from_function_call(
                         name=tc["function"]["name"],
                         args=json.loads(tc["function"]["arguments"])
-                    ))
+                    )
+                    if accumulated_thought_signature:
+                        part.thought_signature = accumulated_thought_signature
+                    parts.append(part)
                 contents.append(types.Content(role="model", parts=parts))
 
                 assistant_message = {

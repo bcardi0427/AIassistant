@@ -20,5 +20,5 @@
     "ruamel.yaml==0.18.5",
     "google-genai>=1.0.0"
   ],
-  "version": "0.9.28"
+  "version": "0.9.29"
 }
